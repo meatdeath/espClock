@@ -8,6 +8,25 @@ void display_init(void) {
     ledMatrix.setTextOffset(32);
 }
 
+void display_brightness(uint8_t percentage) {
+    if( percentage <= 6)       ledMatrix.setIntensity(0);
+    else if( percentage <= 12) ledMatrix.setIntensity(1);
+    else if( percentage <= 18) ledMatrix.setIntensity(2);
+    else if( percentage <= 25) ledMatrix.setIntensity(3);
+    else if( percentage <= 31) ledMatrix.setIntensity(4);
+    else if( percentage <= 37) ledMatrix.setIntensity(5);
+    else if( percentage <= 43) ledMatrix.setIntensity(6);
+    else if( percentage <= 50) ledMatrix.setIntensity(7);
+    else if( percentage <= 56) ledMatrix.setIntensity(8);
+    else if( percentage <= 62) ledMatrix.setIntensity(9);
+    else if( percentage <= 68) ledMatrix.setIntensity(10);
+    else if( percentage <= 75) ledMatrix.setIntensity(11);
+    else if( percentage <= 81) ledMatrix.setIntensity(12);
+    else if( percentage <= 87) ledMatrix.setIntensity(13);
+    else if( percentage <= 93) ledMatrix.setIntensity(14);
+    else                       ledMatrix.setIntensity(15);
+}
+
 void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     byte i;
 
@@ -43,6 +62,14 @@ void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     // minutes low
     for( i = 0; i < pgm_read_byte(&(digits[m2].size)); i++ ) {
         ledMatrix.setColumn(26+i, pgm_read_byte(&(digits[m2].array[i])) );
+    }
+    ledMatrix.Rotate90();
+    ledMatrix.commit();
+}
+
+void display_printstarting(void) {
+    for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
+        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
     }
     ledMatrix.Rotate90();
     ledMatrix.commit();

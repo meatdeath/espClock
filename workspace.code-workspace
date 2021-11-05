@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"name": "esp_clock",
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"LG240644-S9.C": "cpp",
+			"LG240644-S8.C": "cpp"
+		}
+	}
+}
