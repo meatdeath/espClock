@@ -11,13 +11,12 @@
 #endif
 #include <Hash.h>
 #include "ESPAsyncWebServer.h"
-//#include <EEPROM.h>
-//#include <google-tts.h>
 
 #include <ESP8266HTTPClient.h>
 
 #include "display.h"
 #include "config.h"
+#include "rtc.h"
 
 #include <NTPClient.h>
 #include <WiFiUdp.h>
@@ -42,12 +41,14 @@ IPAddress subnet(255,255,255,0);
 DNSServer dnsServer;
 #endif
 AsyncWebServer server(80);
-const char* ssid = "ESPtest";
+const char* ssid = "ESPClock";
 const char* passphrase = "1290test$#A";
 volatile bool softreset = false;
 int statusCode;
 String content;
 String st;
+bool rtc_require_update = false;
+bool time_sync_with_ntp = false;
 
 bool testWifi(void);
 void launchWeb(int webtype);
@@ -80,9 +81,14 @@ void setup() {
     // load config
     config_read();
 
-    //if ( esid.length() > 1 ) {
+    rtc_Init();
+
+    DateTime dt;
+    rtc_GetDT( config.clock.hour_offset, config.clock.minute_offset, &dt );
+    Serial.printf("RTC time: %02d:%02d:%02d\r\n", dt.hour(), dt.minute(), dt.second());
+
+
     if( config.wifi.valid ) {
-        //WiFi.begin(esid.c_str(), epass.c_str());
         WiFi.begin( config.wifi.name, config.wifi.password );
         if (testWifi()) {
 // #ifdef ENABLE_DNS
@@ -100,8 +106,9 @@ void setup() {
             }
             
             timeClient.begin();
+            rtc_require_update = true;
+            time_sync_with_ntp = true;
             return;
-
         } 
         else 
         {
@@ -113,6 +120,7 @@ void setup() {
         Serial.println("EEPROM doesn't contain WiFi connection information.");
         Serial.println("Switch to AP mode immediately.");
     }
+    time_sync_with_ntp = false;
     setupAP();
 }
 
@@ -200,7 +208,7 @@ void setupAP(void) {
     Serial.print("Setting soft-AP configuration: ");
     Serial.println(WiFi.softAPConfig(apIP, gateway, subnet) ? "Done" : "Failed!");
 
-    Serial.print("Setting soft-AP: ");
+    Serial.printf("Setting soft-AP \"%s\": ", ssid);
     Serial.println(WiFi.softAP(ssid, passphrase) ? "Done" : "Failed!");
 
     Serial.print("Soft-AP IP address: ");
@@ -526,8 +534,17 @@ void loop() {
 #ifdef ENABLE_DNS
     dnsServer.processNextRequest();
 #endif
+    if(time_sync_with_ntp) {
+        timeClient.update();
 
-    timeClient.update();
+        if( rtc_require_update ) {
+            uint32_t epoch_time = timeClient.getEpochTime();
+            Serial.printf("Updating RTC with epoch time %u... ", epoch_time);
+            rtc_SetEpoch(epoch_time);
+            rtc_require_update = false;
+            Serial.println("done");
+        }
+    }
 
     // new_time = timeClient.getFormattedTime();
     // if( new_time != old_time ) {
@@ -539,14 +556,26 @@ void loop() {
     
     cnt++;
     if( cnt == 100 ) {
-        int8_t hours = timeClient.getHours();
-        int8_t minutes = timeClient.getMinutes() + config.clock.minute_offset;
-        if( minutes > 59 ) { minutes -= 60; hours++; }
-        hours += config.clock.hour_offset;
-        if( hours > 23 ) hours -= 24;
-        if( hours > 23 ) hours -= 24;
-        if( hours < 0 ) hours += 24;
-        display_printtime( hours, minutes, timeClient.getSeconds(), DISPLAY_FORMAT_24H );
+        int8_t hours = 0;
+        int8_t minutes = 0;
+        int8_t seconds = 0;
+        if(time_sync_with_ntp) {
+            hours = timeClient.getHours();
+            minutes = timeClient.getMinutes() + config.clock.minute_offset;
+            seconds = timeClient.getSeconds();
+            if( minutes > 59 ) { minutes -= 60; hours++; }
+            hours += config.clock.hour_offset;
+            if( hours > 23 ) hours -= 24;
+            if( hours > 23 ) hours -= 24;
+            if( hours < 0 ) hours += 24;
+        } else {
+            DateTime dt;
+            rtc_GetDT(config.clock.hour_offset, config.clock.minute_offset, &dt);
+            hours = dt.hour();
+            minutes = dt.minute();
+            seconds = dt.second();
+        }
+        display_printtime( hours, minutes, seconds, DISPLAY_FORMAT_24H );
         cnt = 0;
     }
 
