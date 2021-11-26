@@ -87,19 +87,11 @@ void setupAP(void) {
     for (int i = 0; i < n; ++i)
     {
         // Print SSID and RSSI for each network found
-        st += "<input type='radio' id='";
-        st += WiFi.SSID(i);
-        st += "' name='ssid' value='";
-        st += WiFi.SSID(i);
-        st += "'><label for='";
-        st += WiFi.SSID(i);
-        st += "'>";
-        st += WiFi.SSID(i);
-        st += " (";
-        st += WiFi.RSSI(i);
-        st += ")";
-        st += (WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*";
-        st += "<label><br>";
+        String ssid = WiFi.SSID(i);
+        st += 
+"<div><input type='radio' id='" + ssid + "' name='ssid' value='" + ssid + 
+"'><label for='" + ssid + "'>" + ssid + " (" + WiFi.RSSI(i) + ")" + 
+(WiFi.encryptionType(i) == ENC_TYPE_NONE)?String(" "):String("*") + "</label></div>";
     }
     delay(100);
 
@@ -148,39 +140,58 @@ void createWebServer(int webtype)
     {
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             IPAddress ip = WiFi.softAPIP();
-            content = "<!DOCTYPE HTML>\n<html>\n<body>\n<head>\n";
-            content += "<meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>\n";
-            content += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>\n";
+            content = 
+"<!DOCTYPE HTML>"
+"   <html>"
+"       <head>"
+"			<style>"
+"				input[type='radio'] { margin: 0 10px 0 0; }"
+"			</style>"
+"           <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>"
+"           <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>"
+"       </head>"
+"       <body>"
+"           <div style='font-size:3em; padding:30px;'>"
+"               <h1>ESPClock</h1>"
+"               <p>IP address: " + ip.toString() + "</p>"
+"               <hr>"
+"               <p>"
+"                   <label for='hour_offset'>Hours offset</label>"
+"                   <input type='number' id='hour_offset' name='hour_offset' value='" + ((String)config.clock.hour_offset) + "' min='-12' max='12' onchange='setOffset(this);'>"
+"               </p>"
+"               <p>"
+"                   <label for='minutes_offset'>Minutes offset</label>"
+"                   <input type='number' id='minutes_offset' name='minutes_offset' value='" + ((String)config.clock.minute_offset) + "' min='0' max='59' onchange='setOffset(this);'>"
+"               </p>"
+"               <form method='get' action='setting'>"
+                    "<hr>"
+"                   <p style='margin:0 0 5px 0'>Choose a network to connect</p>" +
+                    st +
+                    "<br>"
+                    "<p>"
+"                       <label for='pass'>Password</label>"
+"                       <input name='pass' type='password' length=64>"
+                    "</p>"
+"                   <hr>"
+"                   <button type='submit' class='btn btn-primary'>Save WiFi settings</button>"
+"               </form>"
+"           </div>"
+"       </body>"
+"       <script src='https://code.jquery.com/jquery-3.2.1.slim.min.js' integrity='sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN' crossorigin='anonymous'></script>"
+"       <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>"
+"       <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>"
+"       <script>"
+"function setOffset() {"
+    "var xhttp = new XMLHttpRequest();"
+    "xhttp.onreadystatechange = function() {"
+    "};"
+    "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
+    "xhttp.open('GET', '/time_offset'+param, true);"
+    "xhttp.send();"
+"}"
+"       </script>"
+"   </html>";
 
-            content += "</head>\n<div style='font-size:3em; padding:30px;'>\n<h1>ESPClock</h1><p>IP address: ";
-            content += ip.toString();
-            content += "</p>\n<br><hr><br>\n<p><label for='hour_offset'>Hours offset</label>\n<input type='number' id='hour_offset' name='hour_offset' value='";
-            content += ((String)config.clock.hour_offset).c_str();
-            content += "' min='-12' max='12' onchange='setOffset(this);'>\n</p>\n";
-            content += "<p>\n<label for='minutes_offset'>Minutes offset</label>\n<input type='number' id='minutes_offset' name='minutes_offset' value='";
-            content += ((String)config.clock.minute_offset).c_str();
-            content += "' min='0' max='59' onchange='setOffset(this);'>\n</p>\n";
-            content += "<form method='get' action='setting'>\n<p>Choose a network to connect</p>\n";
-            content += st;
-            content += "<label for='pass'>Password</label>\n<input name='pass' type='password' length=64>\n<br>\n<button type='submit' class='btn btn-primary'>Save WiFi settings</button>\n</form>\n";
-            content += "</div>\n";
-            content += "<script src='https://code.jquery.com/jquery-3.2.1.slim.min.js' integrity='sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN' crossorigin='anonymous'></script>\n";
-            content += "<script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>\n";
-            content += "<script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>\n";
-
-            content += "</body>\n";
-            
-            content += "<script>"
-                            "function setOffset() {"
-                                "var xhttp = new XMLHttpRequest();"
-                                "xhttp.onreadystatechange = function() {"
-                                "};"
-                                "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
-                                "xhttp.open('GET', '/time_offset'+param, true);"
-                                "xhttp.send();"
-                            "}"
-                        "</script>";
-            content += "</html>";
             request->send_P(200, "text/html", content.c_str());  
         });
         server.on("/setting", HTTP_GET, [](AsyncWebServerRequest *request) {

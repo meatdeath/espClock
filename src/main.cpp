@@ -2,6 +2,8 @@
 
 // #include <ESP8266WiFi.h>
 // #include <ESP8266WebServer.h>
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
 
 #include "display.h"
 #include "config.h"
@@ -18,7 +20,22 @@ bool rtc_require_update = false;
 bool time_sync_with_ntp = false;
 bool time_to_update_from_ntp = false;
 
+Adafruit_BMP280 bmp; // I2C
+bool bmp_sensor_present = false;
+float temperature;
+float pressure;
+float altitude;
+
 //--------------------------------------------------------------------------------------------------------
+
+void read_bmp_sensor() {
+    if(bmp_sensor_present) {
+        temperature = bmp.readTemperature();
+        pressure = bmp.readPressure();
+        altitude = bmp.readAltitude(1013.25); /* Adjusted to local forecast! */
+        pressure *= 0.00750062;
+    }
+}
 
 void setup() {
     
@@ -49,6 +66,38 @@ void setup() {
 
     rtc_GetDT( &rtc_dt );
     Serial.printf("RTC time: %02d:%02d:%02d\r\n", rtc_dt.hour(), rtc_dt.minute(), rtc_dt.second());
+
+    if (!bmp.begin(BMP280_ADDRESS_ALT)) {
+        Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
+                        "try a different address!"));
+    } else {
+            /* Default settings from datasheet. */
+        bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                        Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                        Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                        Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                        Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
+        temperature = bmp.readTemperature();
+        pressure = bmp.readPressure();
+        altitude = bmp.readAltitude(1013.25); /* Adjusted to local forecast! */
+        Serial.print(F("Temperature = "));
+        Serial.print(temperature);
+        Serial.println(" *C");
+
+        Serial.print(F("Pressure = "));
+        Serial.print(pressure);
+        Serial.print(" Pa = ");
+        Serial.print(0.00750062*pressure);
+        Serial.println("mm Hg");
+
+        Serial.print(F("Approx altitude = "));
+        Serial.print(altitude); 
+        Serial.println(" m");
+
+        Serial.println(); 
+        bmp_sensor_present = true;                 
+    }
 
 
     if( config.wifi.valid ) {

@@ -27,6 +27,41 @@ void display_brightness(uint8_t percentage) {
     else                       ledMatrix.setIntensity(15);
 }
 
+void display_printtemperature(int temperature) {
+    uint8_t i, offset = 0;
+    uint8_t size = pgm_read_byte(&(digits[DISPLAY_MINUS].size));
+    if( temperature < 0 ) {
+        for( i = 0; i < size; i++ ) {
+            ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MINUS].array[i])) );
+        }
+        temperature = -temperature;
+    } else {
+        for( i = 0; i < size; i++ ) {
+            ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MINUS].array[i])) );
+        }
+    }
+    offset += size + 1;
+
+    uint8_t t1 = temperature / 10;
+    uint8_t t2 = temperature % 10;
+
+    size = pgm_read_byte(&(digits[t1].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t1].array[i])) );
+    }
+    offset += size + 1;
+    size = pgm_read_byte(&(digits[t2].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t2].array[i])) );
+    }
+    offset += size + 1;
+    size = pgm_read_byte(&(digits[DISPLAY_CELCIUS].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_CELCIUS].array[i])) );
+    }
+
+}
+
 void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     byte i;
 
