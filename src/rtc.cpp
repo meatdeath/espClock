@@ -46,7 +46,7 @@ IRAM_ATTR void time_tick500ms() {
             }
         }
     }
-    Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
+    //Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
     was_updated = true;
 }
 
