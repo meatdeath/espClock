@@ -1,6 +1,7 @@
 
 
 #include "rtc.h"
+#include "display.h"
  
 RTC_DS3231 rtc;
 
@@ -13,10 +14,38 @@ volatile unsigned long rtc_SecondsSinceUpdate;
 
 volatile bool was_updated = false;
 
+
+#define DEFAULT_SENSOR_UPDATE_TIME  60 // in seconds (max 255)
+
+
+uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
+
+volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
+    {   // SW_TIMER_SENSOR_UPDATE
+        .triggered = false,
+        .update_time = sensor_update_time,
+        .downcounter = sensor_update_time
+    },
+    {   // SW_TIMER_SWITCH_DISPLAY
+        .triggered = false,
+        .update_time = CLOCK_SHOW_TIME,
+        .downcounter = CLOCK_SHOW_TIME
+    }
+};
+
+
 IRAM_ATTR void time_tick500ms() {
     //Serial.println("Enter pin interrupt");
-    if( digitalRead(RTC_SQW_PIN) )
+    if( digitalRead(RTC_SQW_PIN) ) {
         rtc_SecondsSinceUpdate++;
+        for( int i = 0; i < SW_TIMER_MAX; i++ ) {
+            sw_timer[i].downcounter--;
+            if( sw_timer[i].downcounter == 0 ) {
+                sw_timer[i].triggered = true;
+                sw_timer[i].downcounter = sw_timer[i].update_time;
+            }
+        }
+    }
     Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
     was_updated = true;
 }

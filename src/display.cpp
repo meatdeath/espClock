@@ -27,8 +27,45 @@ void display_brightness(uint8_t percentage) {
     else                       ledMatrix.setIntensity(15);
 }
 
+void display_printpressure(uint16_t pressure) {
+    uint8_t i, offset = 0;
+    uint8_t d1 = (pressure/100)%10;
+    uint8_t d2 = (pressure/10)%10;
+    uint8_t d3 = pressure%10;
+    uint8_t size;
+    
+    ledMatrix.clear();
+
+    size = pgm_read_byte(&(digits[d1].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[d1].array[i])) );
+    }
+    offset += size + 2;
+
+    size = pgm_read_byte(&(digits[d2].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[d2].array[i])) );
+    }
+    offset += size + 2;
+
+    size = pgm_read_byte(&(digits[d3].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[d3].array[i])) );
+    }
+    offset += size + 2;
+    size = pgm_read_byte(&(digits[DISPLAY_MM].size));
+    for( i = 0; i < size; i++ ) {
+        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MM].array[i])) );
+    }
+    ledMatrix.Rotate90();
+    ledMatrix.commit();
+}
+
 void display_printtemperature(int temperature) {
     uint8_t i, offset = 0;
+
+    ledMatrix.clear();
+
     uint8_t size = pgm_read_byte(&(digits[DISPLAY_MINUS].size));
     if( temperature < 0 ) {
         for( i = 0; i < size; i++ ) {
@@ -37,10 +74,10 @@ void display_printtemperature(int temperature) {
         temperature = -temperature;
     } else {
         for( i = 0; i < size; i++ ) {
-            ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MINUS].array[i])) );
+            ledMatrix.setColumn(offset+i, 0x00);
         }
     }
-    offset += size + 1;
+    offset += size + 2;
 
     uint8_t t1 = temperature / 10;
     uint8_t t2 = temperature % 10;
@@ -49,16 +86,18 @@ void display_printtemperature(int temperature) {
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t1].array[i])) );
     }
-    offset += size + 1;
+    offset += size + 2;
     size = pgm_read_byte(&(digits[t2].size));
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t2].array[i])) );
     }
-    offset += size + 1;
+    offset += size + 2;
     size = pgm_read_byte(&(digits[DISPLAY_CELCIUS].size));
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_CELCIUS].array[i])) );
     }
+    ledMatrix.Rotate90();
+    ledMatrix.commit();
 
 }
 

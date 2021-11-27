@@ -81,6 +81,7 @@ void setup() {
         temperature = bmp.readTemperature();
         pressure = bmp.readPressure();
         altitude = bmp.readAltitude(1013.25); /* Adjusted to local forecast! */
+        pressure *= 0.00750062;
         Serial.print(F("Temperature = "));
         Serial.print(temperature);
         Serial.println(" *C");
@@ -131,6 +132,14 @@ void setup() {
 }
 
 //-----------------------------------------------------------------------------------------------------------
+enum dispays_en {
+    DISPLAY_CLOCK = 0,
+    DISPLAY_TEMPERATURE,
+    DISPLAY_PRESSURE
+};
+
+uint8_t show_display = DISPLAY_CLOCK;
+uint8_t last_shown_display = DISPLAY_CLOCK;
 
 void loop() {
     if(softreset==true) {
@@ -169,28 +178,67 @@ void loop() {
         }
     }
 
-    if( rtc_wasUpdated() )
-    {
-        int8_t hours = 0;
-        int8_t minutes = 0;
-        int8_t seconds = 0;
-        if(time_sync_with_ntp) {
-
-            unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset + rtc_SecondsSinceUpdate;
-            hours = (time % 86400L) / 3600;
-            minutes = (time % 3600) / 60;
-            seconds = time % 60;
-            if( hours == 3 && minutes == 0 && seconds == 0 ) // update time in RTC module each day at 3:00am
+    switch(show_display) {
+        case DISPLAY_CLOCK:
+            if( rtc_wasUpdated() )
             {
-                rtc_require_update = true;
+                int8_t hours = 0;
+                int8_t minutes = 0;
+                int8_t seconds = 0;
+                if(time_sync_with_ntp) {
+
+                    unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset + rtc_SecondsSinceUpdate;
+                    hours = (time % 86400L) / 3600;
+                    minutes = (time % 3600) / 60;
+                    seconds = time % 60;
+                    if( hours == 3 && minutes == 0 && seconds == 0 ) // update time in RTC module each day at 3:00am
+                    {
+                        rtc_require_update = true;
+                    }
+                } else {
+                    DateTime dt = rtc_dt + TimeSpan( rtc_SecondsSinceUpdate/(3600*24), config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, rtc_SecondsSinceUpdate%60 );
+                    hours = dt.hour();
+                    minutes = dt.minute();
+                }
+                display_printtime( hours, minutes, digitalRead(RTC_SQW_PIN), DISPLAY_FORMAT_24H );
+                rtc_updated();
+                last_shown_display = DISPLAY_CLOCK;
             }
-        } else {
-            DateTime dt = rtc_dt + TimeSpan( rtc_SecondsSinceUpdate/(3600*24), config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, rtc_SecondsSinceUpdate%60 );
-            hours = dt.hour();
-            minutes = dt.minute();
+            break;
+        case DISPLAY_TEMPERATURE:
+            if(last_shown_display != DISPLAY_TEMPERATURE)
+                display_printtemperature((int)temperature);
+            last_shown_display = DISPLAY_TEMPERATURE;
+            break;
+        case DISPLAY_PRESSURE:
+            if(last_shown_display != DISPLAY_PRESSURE)
+                display_printpressure((uint16_t)pressure);
+            last_shown_display = DISPLAY_PRESSURE;
+            break;
+    }
+
+    if( sw_timer[SW_TIMER_SENSOR_UPDATE].triggered ) {
+        sw_timer[SW_TIMER_SENSOR_UPDATE].triggered = false;
+        read_bmp_sensor();
+    }
+
+    if( sw_timer[SW_TIMER_SWITCH_DISPLAY].triggered ) {
+        Serial.printf("Time to switch display %d\r\n", show_display);
+        switch(show_display) {
+            case DISPLAY_CLOCK:
+                show_display = DISPLAY_TEMPERATURE;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = PRESSURE_SHOW_TIME;
+                break;
+            case DISPLAY_TEMPERATURE:
+                show_display = DISPLAY_PRESSURE;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = CLOCK_SHOW_TIME;
+                break;
+            case DISPLAY_PRESSURE:
+                show_display = DISPLAY_CLOCK;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = TEMPERATURE_SHOW_TIME;
+                break;
         }
-        display_printtime( hours, minutes, digitalRead(RTC_SQW_PIN), DISPLAY_FORMAT_24H );
-        rtc_updated();
+        sw_timer[SW_TIMER_SWITCH_DISPLAY].triggered = false;
     }
     delay(1);
 }
