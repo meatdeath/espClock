@@ -16,7 +16,7 @@ AsyncDNSServer dnsServer;
 
 int statusCode;
 String content;
-String st;
+String htmlRadio_NetworksList;
 
 AsyncWebServer server(80);
 const char* ssid = "ESPClock";
@@ -83,15 +83,18 @@ void setupAP(void) {
         }
     }
     Serial.println(""); 
-    st = "";
+    htmlRadio_NetworksList = "";
     for (int i = 0; i < n; ++i)
     {
         // Print SSID and RSSI for each network found
         String ssid = WiFi.SSID(i);
-        st += 
-"<div><input type='radio' id='" + ssid + "' name='ssid' value='" + ssid + 
-"'><label for='" + ssid + "'>" + ssid + " (" + WiFi.RSSI(i) + ")" + 
-(WiFi.encryptionType(i) == ENC_TYPE_NONE)?String(" "):String("*") + "</label></div>";
+        htmlRadio_NetworksList += 
+            "<div>"
+                "<input type='radio' id='" + ssid + "' name='ssid' value='" + ssid + "'>"
+                "<label for='" + ssid + "'>" + 
+                    ssid + " (" + WiFi.RSSI(i) + ")" + (WiFi.encryptionType(i) == ENC_TYPE_NONE)?String(" "):String("*") + 
+                "</label>"
+            "</div>";
     }
     delay(100);
 
@@ -166,7 +169,7 @@ void createWebServer(int webtype)
 "               <form method='get' action='setting'>"
                     "<hr>"
 "                   <p style='margin:0 0 5px 0'>Choose a network to connect</p>" +
-                    st +
+                    htmlRadio_NetworksList +
                     "<br>"
                     "<p>"
 "                       <label for='pass'>Password</label>"
