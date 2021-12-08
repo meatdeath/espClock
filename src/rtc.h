@@ -16,6 +16,7 @@ void rtc_updated(void);
 enum sw_timers_en {
     SW_TIMER_SENSOR_UPDATE = 0,
     SW_TIMER_SWITCH_DISPLAY,
+    SW_TIMER_COLLECT_PRESSURE_HISTORY,
     SW_TIMER_MAX
 };
 

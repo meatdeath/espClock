@@ -22,9 +22,15 @@ bool time_to_update_from_ntp = false;
 
 Adafruit_BMP280 bmp; // I2C
 bool bmp_sensor_present = false;
-float temperature;
-float pressure;
-float altitude;
+float temperature = 0;
+float pressure = 0;
+float altitude = 0;
+
+#define PRESSURE_HISTORY_SIZE   96
+float pressure_history[PRESSURE_HISTORY_SIZE] = {0}; // 2 days every 30min
+uint16_t pressure_history_size = 0;
+uint16_t pressure_history_start = 0;
+uint16_t pressure_history_end = 0;
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -178,6 +184,63 @@ void loop() {
         }
     }
 
+    if( sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered && pressure != 0 ) {
+        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+        pressure_history[pressure_history_end++] = pressure;
+        if( pressure_history_end == PRESSURE_HISTORY_SIZE )
+            pressure_history_end = 0;
+        if( pressure_history_end == pressure_history_start)
+        {
+            pressure_history_end++;
+            if( pressure_history_start == PRESSURE_HISTORY_SIZE )
+                pressure_history_start = 0;
+        }
+        else
+        {
+            pressure_history_size++;
+        }
+        pressureLabelsStr = "";
+        pressureValuesStr = "";
+        Serial.println("----- Pressure history -----");
+        String html_PressureHistory_line1 = "|     Time |";
+        String html_PressureHistory_line2 = "+----------+";
+        String html_PressureHistory_line3 = "| Pressure |";
+        uint16_t time = pressure_history_size-1;
+        for(uint16_t i = pressure_history_start; i != pressure_history_end; )
+        {
+            char line[20];
+            sprintf( line, " %dh%02dmin |", time/2, ((time&1)?30:0));
+            pressureLabelsStr += "\"";
+            pressureLabelsStr += time/2;
+            pressureLabelsStr += "h";
+            if(time&1) {
+                pressureLabelsStr += "30min";
+            }
+
+            pressureLabelsStr += "\"";
+            pressureValuesStr += (int)pressure_history[i];
+
+            html_PressureHistory_line1 += line;
+            html_PressureHistory_line2 += "---------+";
+            sprintf( line, "   %03dmm |", (int)pressure_history[i]);
+            html_PressureHistory_line3 += line;
+            Serial.println(pressure_history[i]);
+            i++;
+            if( i == PRESSURE_HISTORY_SIZE )
+                i = 0;
+            if( time ) {
+                pressureLabelsStr += ",";
+                pressureValuesStr += ",";
+            }
+            time--;
+        }
+        html_PressureHistory =  
+                                "<p>" + html_PressureHistory_line1 + "</p>" +
+                                "<p>" + html_PressureHistory_line2 + "</p>" +
+                                "<p>" + html_PressureHistory_line3 + "</p>";
+        Serial.println("----------------------------");
+    }
+
     switch(show_display) {
         case DISPLAY_CLOCK:
             if( rtc_wasUpdated() )
@@ -186,8 +249,7 @@ void loop() {
                 int8_t minutes = 0;
                 int8_t seconds = 0;
                 if(time_sync_with_ntp) {
-
-                    unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset + rtc_SecondsSinceUpdate;
+                    unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset*3600 + config.clock.minute_offset*60 + rtc_SecondsSinceUpdate;
                     hours = (time % 86400L) / 3600;
                     minutes = (time % 3600) / 60;
                     seconds = time % 60;
@@ -223,7 +285,7 @@ void loop() {
     }
 
     if( sw_timer[SW_TIMER_SWITCH_DISPLAY].triggered ) {
-        Serial.printf("Time to switch display %d\r\n", show_display);
+        //Serial.printf("Time to switch display %d\r\n", show_display);
         switch(show_display) {
             case DISPLAY_CLOCK:
                 show_display = DISPLAY_TEMPERATURE;

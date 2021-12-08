@@ -22,6 +22,11 @@ enum _web_pages_en {
     WEB_PAGES_FOR_AP  
 };
 
+extern String html_PressureHistory;
+
+extern String pressureLabelsStr;
+extern String pressureValuesStr;
+
 bool testWifi(void);
 void launchWeb(int webtype);
 void setupAP(void);

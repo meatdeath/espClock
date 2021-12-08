@@ -17,6 +17,9 @@ AsyncDNSServer dnsServer;
 int statusCode;
 String content;
 String htmlRadio_NetworksList;
+String html_PressureHistory;
+String pressureLabelsStr;
+String pressureValuesStr;
 
 AsyncWebServer server(80);
 const char* ssid = "ESPClock";
@@ -69,34 +72,30 @@ void setupAP(void) {
     {
         Serial.print(n);
         Serial.println(" networks found");
+        htmlRadio_NetworksList = "<div>";
         for (int i = 0; i < n; ++i)
         {
             // Print SSID and RSSI for each network found
+            String ssid = WiFi.SSID(i);
+            int32_t rssi = WiFi.RSSI(i);
+            String encryption = (WiFi.encryptionType(i) == ENC_TYPE_NONE)?String(" "):String("*");
             Serial.print(i + 1);
             Serial.print(": ");
-            Serial.print(WiFi.SSID(i));
+            Serial.print(ssid);
             Serial.print(" (");
-            Serial.print(WiFi.RSSI(i));
+            Serial.print(rssi);
             Serial.print(")");
-            Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*");
-            delay(10);
+            Serial.println(encryption);
+            //delay(10);
+            htmlRadio_NetworksList += "<div>";
+            htmlRadio_NetworksList +=   "<input type='radio' id='" + ssid + "' name='ssid' value='" + ssid + "'>";
+            htmlRadio_NetworksList +=   "<label for='" + ssid + "'>";
+            htmlRadio_NetworksList +=       ssid + " (" + rssi + ")" + encryption;
+            htmlRadio_NetworksList +=   "</label>";
+            htmlRadio_NetworksList += "</div>";
         }
     }
     Serial.println(""); 
-    htmlRadio_NetworksList = "";
-    for (int i = 0; i < n; ++i)
-    {
-        // Print SSID and RSSI for each network found
-        String ssid = WiFi.SSID(i);
-        htmlRadio_NetworksList += 
-            "<div>"
-                "<input type='radio' id='" + ssid + "' name='ssid' value='" + ssid + "'>"
-                "<label for='" + ssid + "'>" + 
-                    ssid + " (" + WiFi.RSSI(i) + ")" + (WiFi.encryptionType(i) == ENC_TYPE_NONE)?String(" "):String("*") + 
-                "</label>"
-            "</div>";
-    }
-    delay(100);
 
     Serial.print("Setting soft-AP configuration: ");
     Serial.println(WiFi.softAPConfig(apIP, gateway, subnet) ? "Done" : "Failed!");
@@ -157,6 +156,8 @@ void createWebServer(int webtype)
 "           <div style='font-size:3em; padding:30px;'>"
 "               <h1>ESPClock</h1>"
 "               <p>IP address: " + ip.toString() + "</p>"
+"               <hr>" +
+                html_PressureHistory +
 "               <hr>"
 "               <p>"
 "                   <label for='hour_offset'>Hours offset</label>"
@@ -184,14 +185,14 @@ void createWebServer(int webtype)
 "       <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>"
 "       <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>"
 "       <script>"
-"function setOffset() {"
-    "var xhttp = new XMLHttpRequest();"
-    "xhttp.onreadystatechange = function() {"
-    "};"
-    "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
-    "xhttp.open('GET', '/time_offset'+param, true);"
-    "xhttp.send();"
-"}"
+"           function setOffset() {"
+                "var xhttp = new XMLHttpRequest();"
+                "xhttp.onreadystatechange = function() {"
+                "};"
+                "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
+                "xhttp.open('GET', '/time_offset'+param, true);"
+                "xhttp.send();"
+"           }"
 "       </script>"
 "   </html>";
 
@@ -315,9 +316,15 @@ void createWebServer(int webtype)
             IPAddress ip = WiFi.localIP();
             String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
             // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
-            content = "<!DOCTYPE HTML><html><body><h1>ESPClock</h1><p>IP address: ";
+            content = "<!DOCTYPE HTML><html>";
+            content += "       <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>";
+            content += "<body><h1>ESPClock</h1><p>IP address: ";
             //content += ipStr;
             content += ip.toString();
+            content += 
+"               <p>"
+"                   <canvas id='pressureChart' style='width:100%;max-width:600px'></canvas>"
+"               </p>";
             content += "</p><br><hr><br><label for='hour_offset'>Hour offset</label><input type='number' id='hour_offset' name='hour_offset' value='";
             content += ((String)config.clock.hour_offset).c_str();
             content += "' min='-12' max='12' onchange='setOffset(this);'>";
@@ -328,6 +335,20 @@ void createWebServer(int webtype)
             content += "</body>";
             
             content += "<script>"
+"            new Chart('pressureChart', {"
+"                type: 'line',"
+"                data: {"
+"                    labels: [" + pressureLabelsStr + "],"
+"                    datasets: [{" 
+"                       data: [" + pressureValuesStr + "],"
+"                       borderColor: 'red',"
+"                       fill: false"
+"                    }]"
+"                },"
+"                options: {"
+"                    legend: {display: false}"
+"                }"
+"            });"
                             "function setOffset() {"
                                 "var xhttp = new XMLHttpRequest();"
                                 "xhttp.onreadystatechange = function() {"
