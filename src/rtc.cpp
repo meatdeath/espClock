@@ -12,7 +12,7 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 
 volatile unsigned long rtc_SecondsSinceUpdate;
 
-volatile bool was_updated = false;
+volatile bool local_time_updated = false;
 
 
 #define DEFAULT_SENSOR_UPDATE_TIME  60 // in seconds (max 255)
@@ -24,20 +24,57 @@ uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
 volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
     {   // SW_TIMER_SENSOR_UPDATE
         .triggered = false,
-        .update_time = sensor_update_time,
+        .autoupdate = true,
+        .updatetime = sensor_update_time,
         .downcounter = sensor_update_time
+    },
+    {   // SW_TIMER_GET_TIME_FROM_RTC_MODULE
+        .triggered = true,
+        .autoupdate = true,
+        .updatetime = 60, // each 1 min
+        .downcounter = 10
+    },
+    {   // SW_TIMER_RTC_MODULE_UPDATE,
+        .triggered = false,
+        .autoupdate = true,
+        .updatetime = 60, // each 1 min
+        .downcounter = 60
+    },
+    {   // SW_TIMER_NTP_TIME_UPDATE,
+        .triggered = true,
+        .autoupdate = true,
+        .updatetime = 60, // each 1 min
+        .downcounter = 30
     },
     {   // SW_TIMER_SWITCH_DISPLAY
         .triggered = false,
-        .update_time = CLOCK_SHOW_TIME,
+        .autoupdate = true,
+        .updatetime = CLOCK_SHOW_TIME,
         .downcounter = CLOCK_SHOW_TIME
     },
-    {
+    {   // SW_TIMER_COLLECT_PRESSURE_HISTORY
         .triggered = true,
-        .update_time = COLLECT_PRESSURE_HISTORY_PERIOD,
+        .autoupdate = true,
+        .updatetime = COLLECT_PRESSURE_HISTORY_PERIOD,
         .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD
     }
 };
+
+void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value )
+{
+    sw_timer[sw_timer_index].triggered = value;
+}
+
+bool swTimerIsTriggered( enum sw_timers_en sw_timer_index, bool autoreset )
+{
+    bool triggered = false;
+    if( sw_timer[sw_timer_index].triggered ) {
+        triggered = true;
+        if( autoreset )
+            sw_timer[sw_timer_index].triggered = false;
+    }
+    return triggered;
+}
 
 
 IRAM_ATTR void time_tick500ms() {
@@ -45,23 +82,27 @@ IRAM_ATTR void time_tick500ms() {
     if( digitalRead(RTC_SQW_PIN) ) {
         rtc_SecondsSinceUpdate++;
         for( int i = 0; i < SW_TIMER_MAX; i++ ) {
-            sw_timer[i].downcounter--;
-            if( sw_timer[i].downcounter == 0 ) {
-                sw_timer[i].triggered = true;
-                sw_timer[i].downcounter = sw_timer[i].update_time;
+            if( sw_timer[i].downcounter ) {
+                sw_timer[i].downcounter--;
+                if( sw_timer[i].downcounter == 0 ) {
+                    sw_timer[i].triggered = true;
+                    if(sw_timer[i].autoupdate) {
+                        sw_timer[i].downcounter = sw_timer[i].updatetime;
+                    }
+                }
             }
         }
     }
     //Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
-    was_updated = true;
+    local_time_updated = true;
 }
 
-bool rtc_wasUpdated(void) {
-    return was_updated;
+bool rtc_LocalTimeRequireProcessing(void) {
+    return local_time_updated;
 }
 
-void rtc_updated(void) {
-    was_updated = false;
+void rtc_SetLocalTimeProcessed(void) {
+    local_time_updated = false;
 }
 
 void rtc_Init(void) {
@@ -91,7 +132,6 @@ void rtc_Init(void) {
     Serial.printf("RTC init time: %02d:%02d:%02d\r\n", dt.hour(), dt.minute(), dt.second());
     rtc.writeSqwPinMode(DS3231_SquareWave1Hz);
     rtc_SecondsSinceUpdate = 0;
-    was_updated = true;
 }
 
 void rtc_GetDT(DateTime *dst_dt) {

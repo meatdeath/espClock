@@ -1,6 +1,6 @@
 #include "web.h"
 #include "config.h"
-
+#include <NTPClient.h>
 
 
 const byte DNS_PORT = 53;
@@ -24,6 +24,66 @@ String pressureValuesStr;
 AsyncWebServer server(80);
 const char* ssid = "ESPClock";
 const char* passphrase = "1290test$#A";
+
+//extern WiFiUDP ntpUDP;
+extern NTPClient timeClient;
+extern bool time_sync_with_ntp_enabled;
+
+StateWifi WifiState;
+
+void wifi_processing(void) {
+    switch (WifiState)
+    {
+    case STATE_WIFI_IDLE:
+        if( config.wifi.valid ) {
+            Serial.print("Network name: ");
+            Serial.println(config.wifi.name);
+            Serial.print("Password: ");
+            Serial.println(config.wifi.password);
+            Serial.print("Waiting for Wifi to connect "); 
+            WiFi.begin( config.wifi.name, config.wifi.password );
+            WifiState = STATE_WIFI_CONNECTING;
+        } else {
+            Serial.println("EEPROM doesn't contain WiFi connection information.");
+            Serial.println("Switch to AP mode immediately.");
+            time_sync_with_ntp_enabled = false;
+            setupAP();
+        }
+        break;
+    case STATE_WIFI_CONNECTING:
+        if (WiFi.status() == WL_CONNECTED) { 
+            Serial.println("WiFi connected");
+            WifiState = STATE_WIFI_CONNECTED;
+            launchWeb(WEB_PAGES_NORMAL);
+            timeClient.begin();
+            time_sync_with_ntp_enabled = true; 
+        } else {
+            Serial.print(".");
+            // TODO: if timeout then setup AP
+            // if()
+            // {
+            //     Serial.println("WiFi connection wasn't established. Switch to AP.");
+            //     time_sync_with_ntp_enabled = false;
+            //     setupAP();
+            // }
+        }
+        break;
+    case STATE_WIFI_CONNECTED:
+        if (WiFi.status() != WL_CONNECTED) {
+            WiFi.disconnect();
+            WifiState = STATE_WIFI_IDLE;
+        }
+        /* code */
+        break;
+    case STATE_WIFI_AP:
+        /* code */
+        break;
+    
+    default:
+        WifiState = STATE_WIFI_IDLE;
+        break;
+    }
+}
 
 bool testWifi(void) {
     int c = 0;

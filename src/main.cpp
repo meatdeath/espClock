@@ -16,9 +16,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
 volatile bool softreset = false;
-bool rtc_require_update = false;
-bool time_sync_with_ntp = false;
-bool time_to_update_from_ntp = false;
+bool time_sync_with_ntp_enabled = false;
 
 Adafruit_BMP280 bmp; // I2C
 bool bmp_sensor_present = false;
@@ -68,6 +66,11 @@ void setup() {
     // load config
     config_read();
 
+    Serial.printf("Time offset... %d hours %02d minute(s)\r\n", config.clock.hour_offset, config.clock.minute_offset);
+    if( config.clock.hour_offset > 12 || config.clock.hour_offset < -12 || config.clock.minute_offset < 0 || config.clock.minute_offset > 59 ) {
+        // Reset time offset if invalid
+        config_settimeoffset(0, 0);
+    }
     rtc_Init();
 
     rtc_GetDT( &rtc_dt );
@@ -106,35 +109,28 @@ void setup() {
         bmp_sensor_present = true;                 
     }
 
+    WifiState = STATE_WIFI_IDLE;
 
-    if( config.wifi.valid ) {
-        WiFi.begin( config.wifi.name, config.wifi.password );
-        if (testWifi()) {
-            launchWeb(WEB_PAGES_NORMAL);
-
-            Serial.printf("Reading time offset... %d hours %02d minute(s)\r\n", config.clock.hour_offset, config.clock.minute_offset);
-            if( config.clock.hour_offset > 12 || config.clock.hour_offset < -12 || config.clock.minute_offset < 0 || config.clock.minute_offset > 59 ) {
-                config_settimeoffset(0, 0);
-            }
-            
-            timeClient.begin();
-            rtc_require_update = true;
-            time_sync_with_ntp = true;
-            time_to_update_from_ntp = true; // update RTC module time with time from network each start
-            return;
-        } 
-        else 
-        {
-            Serial.println("WiFi connection wasn't established. Switch to AP.");
-        }
-    }
-    else
-    {
-        Serial.println("EEPROM doesn't contain WiFi connection information.");
-        Serial.println("Switch to AP mode immediately.");
-    }
-    time_sync_with_ntp = false;
-    setupAP();
+    // if( config.wifi.valid ) {
+    //     WiFi.begin( config.wifi.name, config.wifi.password );
+    //     if (testWifi()) {
+    //         launchWeb(WEB_PAGES_NORMAL);            
+    //         timeClient.begin();
+    //         time_sync_with_ntp_enabled = true;
+    //         return;
+    //     } 
+    //     else 
+    //     {
+    //         Serial.println("WiFi connection wasn't established. Switch to AP.");
+    //     }
+    // }
+    // else
+    // {
+    //     Serial.println("EEPROM doesn't contain WiFi connection information.");
+    //     Serial.println("Switch to AP mode immediately.");
+    // }
+    // setupAP();
+    time_sync_with_ntp_enabled = false;
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -148,6 +144,8 @@ uint8_t show_display = DISPLAY_CLOCK;
 uint8_t last_shown_display = DISPLAY_CLOCK;
 
 void loop() {
+    wifi_processing();
+
     if(softreset==true) {
         Serial.println("The board will reset in 10s ");
         for(int i = 0; i < 10; i++) {
@@ -159,33 +157,29 @@ void loop() {
         ESP.reset();
     }
 
-    if(time_sync_with_ntp) {
-        if( rtc_wasUpdated() && rtc_SecondsSinceUpdate > 0 && (rtc_SecondsSinceUpdate%60) == 0) // It's time to update from time server
+    if(time_sync_with_ntp_enabled) {
+        if( swTimerIsTriggered(SW_TIMER_NTP_TIME_UPDATE, true) ) // It's time to update from time server
         {
-            Serial.println("It's time to update from time server");
+            //Serial.println("It's time to update from time server");
             if( timeClient.forceUpdate() )
             {
-                Serial.println("Time updated");
+                Serial.printf("Local time updated from NTP with %lus.\r\n", timeClient.getRawEpochTime());
                 rtc_SecondsSinceUpdate = 0;
             }
-            time_to_update_from_ntp = false;
         }
-        if( rtc_require_update ) {
-            Serial.println("Updating RTC module");
+        if( swTimerIsTriggered(SW_TIMER_RTC_MODULE_UPDATE, true) ) {
             uint32_t epoch_time = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
-            Serial.printf("Updating RTC with epoch time %u... ", epoch_time);
+            Serial.printf("Updating RTC module with epoch time %u... \r\n", epoch_time);
             rtc_SetEpoch(epoch_time);
-            rtc_require_update = false;
             Serial.println("done");
         }
     } else {
-        if( rtc_wasUpdated() && rtc_SecondsSinceUpdate > 0 && (rtc_SecondsSinceUpdate%600) == 0 ) {
+        if( swTimerIsTriggered(SW_TIMER_GET_TIME_FROM_RTC_MODULE, true) ) {
             rtc_GetDT(&rtc_dt);
         }
     }
 
-    if( sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered && pressure != 0 ) {
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+    if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
         pressure_history[pressure_history_end++] = pressure;
         if( pressure_history_end == PRESSURE_HISTORY_SIZE )
             pressure_history_end = 0;
@@ -202,68 +196,60 @@ void loop() {
         pressureLabelsStr = "";
         pressureValuesStr = "";
         Serial.println("----- Pressure history -----");
-        String html_PressureHistory_line1 = "|     Time |";
-        String html_PressureHistory_line2 = "+----------+";
         String html_PressureHistory_line3 = "| Pressure |";
         uint16_t time = pressure_history_size-1;
         for(uint16_t i = pressure_history_start; i != pressure_history_end; )
         {
-            char line[20];
-            sprintf( line, " %dh%02dmin |", time/2, ((time&1)?30:0));
             pressureLabelsStr += "\"";
             pressureLabelsStr += time/2;
             pressureLabelsStr += "h";
             if(time&1) {
-                pressureLabelsStr += "30min";
+                pressureLabelsStr += "30";
             }
 
             pressureLabelsStr += "\"";
-            pressureValuesStr += (int)pressure_history[i];
+            pressureValuesStr += pressure_history[i];
 
-            html_PressureHistory_line1 += line;
-            html_PressureHistory_line2 += "---------+";
-            sprintf( line, "   %03dmm |", (int)pressure_history[i]);
+            char line[20];
+            sprintf( line, "| %fmm |", pressure_history[i]);
             html_PressureHistory_line3 += line;
             Serial.println(pressure_history[i]);
             i++;
             if( i == PRESSURE_HISTORY_SIZE )
-                i = 0;
+                i = 0; 
             if( time ) {
                 pressureLabelsStr += ",";
                 pressureValuesStr += ",";
             }
             time--;
         }
-        html_PressureHistory =  
-                                "<p>" + html_PressureHistory_line1 + "</p>" +
-                                "<p>" + html_PressureHistory_line2 + "</p>" +
-                                "<p>" + html_PressureHistory_line3 + "</p>";
+        html_PressureHistory = "<p>" + html_PressureHistory_line3 + "</p>";
         Serial.println("----------------------------");
     }
 
     switch(show_display) {
         case DISPLAY_CLOCK:
-            if( rtc_wasUpdated() )
+            if( rtc_LocalTimeRequireProcessing() )
             {
                 int8_t hours = 0;
                 int8_t minutes = 0;
-                int8_t seconds = 0;
-                if(time_sync_with_ntp) {
+                //int8_t seconds = 0;
+                if(time_sync_with_ntp_enabled) {
                     unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset*3600 + config.clock.minute_offset*60 + rtc_SecondsSinceUpdate;
                     hours = (time % 86400L) / 3600;
                     minutes = (time % 3600) / 60;
-                    seconds = time % 60;
-                    if( hours == 3 && minutes == 0 && seconds == 0 ) // update time in RTC module each day at 3:00am
-                    {
-                        rtc_require_update = true;
-                    }
+                    //seconds = time % 60;
                 } else {
-                    DateTime dt = rtc_dt + TimeSpan( rtc_SecondsSinceUpdate/(3600*24), config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, rtc_SecondsSinceUpdate%60 );
+                    DateTime dt = rtc_dt + 
+                        TimeSpan( rtc_SecondsSinceUpdate/(3600*24), 
+                                    config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, 
+                                    config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, 
+                                    rtc_SecondsSinceUpdate%60 );
                     hours = dt.hour();
                     minutes = dt.minute();
                 }
                 display_printtime( hours, minutes, digitalRead(RTC_SQW_PIN), DISPLAY_FORMAT_24H );
-                rtc_updated();
+                rtc_SetLocalTimeProcessed();
                 last_shown_display = DISPLAY_CLOCK;
             }
             break;
@@ -274,33 +260,31 @@ void loop() {
             break;
         case DISPLAY_PRESSURE:
             if(last_shown_display != DISPLAY_PRESSURE)
-                display_printpressure((uint16_t)pressure);
+                display_printpressure((uint16_t)(pressure+.5));
             last_shown_display = DISPLAY_PRESSURE;
             break;
     }
 
-    if( sw_timer[SW_TIMER_SENSOR_UPDATE].triggered ) {
-        sw_timer[SW_TIMER_SENSOR_UPDATE].triggered = false;
+    if( swTimerIsTriggered(SW_TIMER_SENSOR_UPDATE,true) ) {
         read_bmp_sensor();
     }
 
-    if( sw_timer[SW_TIMER_SWITCH_DISPLAY].triggered ) {
+    if( swTimerIsTriggered(SW_TIMER_SWITCH_DISPLAY,true) ) {
         //Serial.printf("Time to switch display %d\r\n", show_display);
         switch(show_display) {
             case DISPLAY_CLOCK:
                 show_display = DISPLAY_TEMPERATURE;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = PRESSURE_SHOW_TIME;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = PRESSURE_SHOW_TIME;
                 break;
             case DISPLAY_TEMPERATURE:
                 show_display = DISPLAY_PRESSURE;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = CLOCK_SHOW_TIME;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = CLOCK_SHOW_TIME;
                 break;
             case DISPLAY_PRESSURE:
                 show_display = DISPLAY_CLOCK;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].update_time = TEMPERATURE_SHOW_TIME;
+                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = TEMPERATURE_SHOW_TIME;
                 break;
         }
-        sw_timer[SW_TIMER_SWITCH_DISPLAY].triggered = false;
     }
     delay(1);
 }
