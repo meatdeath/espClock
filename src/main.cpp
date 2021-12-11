@@ -185,7 +185,7 @@ void loop() {
             pressure_history_end = 0;
         if( pressure_history_end == pressure_history_start)
         {
-            pressure_history_end++;
+            pressure_history_start++;
             if( pressure_history_start == PRESSURE_HISTORY_SIZE )
                 pressure_history_start = 0;
         }

@@ -9,6 +9,8 @@
 
 #define CS_PIN 2
 
+//#define HIDE_HOUR_LEADING_ZERO
+
 typedef struct _digits_st {
     byte array[32];
     byte size;

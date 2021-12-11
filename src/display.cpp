@@ -113,10 +113,19 @@ void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     byte m2 = minutes%10;
     
     ledMatrix.clear();
-
-    for( i = 0; i < pgm_read_byte(&(digits[h1].size)); i++ ) {
-        ledMatrix.setColumn(i, pgm_read_byte(&(digits[h1].array[i])) );
+#ifndef HIDE_HOUR_LEADING_ZERO
+    if( h1 != 0 ) {
+#endif
+        for( i = 0; i < pgm_read_byte(&(digits[h1].size)); i++ ) {
+            ledMatrix.setColumn(i, pgm_read_byte(&(digits[h1].array[i])) );
+        }
+#ifndef HIDE_HOUR_LEADING_ZERO
+    }else {
+        for( i = 0; i < pgm_read_byte(&(digits[h1].size)); i++ ) {
+            ledMatrix.setColumn(i, 0 );
+        }
     }
+#endif
     //ledMatrix.setColumn(i,0); // space
     //hours low
     for( i = 0; i < pgm_read_byte(&(digits[h2].size)); i++ ) {
