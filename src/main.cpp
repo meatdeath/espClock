@@ -196,23 +196,27 @@ void loop() {
         pressureLabelsStr = "";
         pressureValuesStr = "";
         Serial.println("----- Pressure history -----");
-        String html_PressureHistory_line3 = "| Pressure |";
+        html_PressureHistory = "<table><tr><td>Time ago</td><td>Pressure, mm</td></tr>";
         uint16_t time = pressure_history_size-1;
         for(uint16_t i = pressure_history_start; i != pressure_history_end; )
         {
+            html_PressureHistory += "<tr><td>";
             pressureLabelsStr += "\"";
-            pressureLabelsStr += time/2;
-            pressureLabelsStr += "h";
-            if(time&1) {
-                pressureLabelsStr += "30";
+            html_PressureHistory += time/2;
+            html_PressureHistory += "h";
+            if(time&1 == 0) {
+                pressureLabelsStr += time/2;
+                pressureLabelsStr += "h";
+            } else {
+                html_PressureHistory += "30m";
             }
-
             pressureLabelsStr += "\"";
-            pressureValuesStr += pressure_history[i];
+            html_PressureHistory += "</td><td>";
 
-            char line[20];
-            sprintf( line, "| %fmm |", pressure_history[i]);
-            html_PressureHistory_line3 += line;
+            pressureValuesStr += pressure_history[i];
+            html_PressureHistory += pressure_history[i];
+            html_PressureHistory += "</td></tr>";
+
             Serial.println(pressure_history[i]);
             i++;
             if( i == PRESSURE_HISTORY_SIZE )
@@ -223,7 +227,7 @@ void loop() {
             }
             time--;
         }
-        html_PressureHistory = "<p>" + html_PressureHistory_line3 + "</p>";
+        html_PressureHistory += "</table>";
         Serial.println("----------------------------");
     }
 

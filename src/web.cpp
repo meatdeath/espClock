@@ -376,49 +376,65 @@ void createWebServer(int webtype)
             IPAddress ip = WiFi.localIP();
             String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
             // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
-            content = "<!DOCTYPE HTML><html>";
-            content += "       <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>";
-            content += "<body><h1>ESPClock</h1><p>IP address: ";
-            //content += ipStr;
+            content = 
+                "<!DOCTYPE HTML>"
+                "<html>"
+                    "<script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>"
+                    "<body>"
+                        "<h1>ESPClock</h1>"
+                        "<p>IP address: ";
             content += ip.toString();
-            content += 
-"               <p>"
-"                   <canvas id='pressureChart' style='width:100%;max-width:600px'></canvas>"
-"               </p>";
-            content += "</p><br><hr><br><label for='hour_offset'>Hour offset</label><input type='number' id='hour_offset' name='hour_offset' value='";
+            content += "</p>"
+                        "<h3>Pressure</h3>"
+                        "<p>"
+                            "<canvas id='pressureChart' style='display:block;'></canvas>"
+                        "</p>"
+                        "<hr>"
+                        "<h3>Time offset</h3>"
+                        "<p>"
+                            "<label class='time_offset_labes' for='hour_offset'>Hours</label>"
+                            "<input type='number' id='hour_offset' name='hour_offset' value='";
             content += ((String)config.clock.hour_offset).c_str();
-            content += "' min='-12' max='12' onchange='setOffset(this);'>";
-            content += "<label for='minutes_offset'>Minute offset</label><input type='number' id='minutes_offset' name='minutes_offset' value='";
+            content += "' min='-12' max='12'>"
+                        "</p>"
+                        "<p>"
+                            "<label class='time_offset_labes' for='minutes_offset'>Minutes</label>"
+                            "<input type='number' id='minutes_offset' name='minutes_offset' value='";
             content += ((String)config.clock.minute_offset).c_str();
-            content += "' min='0' max='59' onchange='setOffset(this);'>";
-            content += "<br><hr><br><a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>";
-            content += "</body>";
-            
-            content += "<script>"
-"            new Chart('pressureChart', {"
-"                type: 'line',"
-"                data: {"
-"                    labels: [" + pressureLabelsStr + "],"
-"                    datasets: [{" 
-"                       data: [" + pressureValuesStr + "],"
-"                       borderColor: 'red',"
-"                       fill: false"
-"                    }]"
-"                },"
-"                options: {"
-"                    legend: {display: false}"
-"                }"
-"            });"
-                            "function setOffset() {"
-                                "var xhttp = new XMLHttpRequest();"
-                                "xhttp.onreadystatechange = function() {"
-                                "};"
-                                "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
-                                "xhttp.open('GET', '/time_offset'+param, true);"
-                                "xhttp.send();"
+            content += "' min='0' max='59'>"
+                        "</p>"
+                        "<p>"
+                            "<button onclick='setOffset(this);'>Update time offset</button>"
+                        "</p>"
+                        "<hr>"
+                        "<br>"
+                        "<a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>"
+                    "</body>"
+                    "<script>"
+                        "new Chart('pressureChart', {"
+                            "type: 'line',"
+                            "data: {"
+                                "labels: [" + pressureLabelsStr + "],"
+                                "datasets: [{" 
+                                    "data: [" + pressureValuesStr + "],"
+                                    "borderColor: 'red',"
+                                    "fill: false"
+                                "}]"
+                            "},"
+                            "options: {"
+                            "   legend: {display: false}"
                             "}"
-                        "</script>";
-            content += "</html>";
+                        "});"
+                        "function setOffset() {"
+                            "var xhttp = new XMLHttpRequest();"
+                            "xhttp.onreadystatechange = function() {"
+                            "};"
+                            "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
+                            "xhttp.open('GET', '/time_offset'+param, true);"
+                            "xhttp.send();"
+                        "}"
+                    "</script>"
+                "</html>";
             request->send_P(200, "text/html", content.c_str());  
         });
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
