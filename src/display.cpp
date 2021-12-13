@@ -63,15 +63,32 @@ void display_printpressure(uint16_t pressure) {
 
 void display_printtemperature(int temperature) {
     uint8_t i, offset = 0;
+    bool negative = false;
+
 
     ledMatrix.clear();
 
-    uint8_t size = pgm_read_byte(&(digits[DISPLAY_MINUS].size));
+    uint8_t size;
     if( temperature < 0 ) {
+        negative = true;
+        temperature = -temperature;
+    }
+
+    uint8_t t1 = temperature / 10;
+    uint8_t t2 = temperature % 10;
+    if( t1 == 0 ) {
+        size = pgm_read_byte(&(digits[t1].size));
+        for( i = 0; i < size; i++ ) {
+            ledMatrix.setColumn(offset+i, 0x00 );
+        }
+        offset += size + 2;
+    }
+
+    size = pgm_read_byte(&(digits[DISPLAY_MINUS].size));
+    if( negative ) {
         for( i = 0; i < size; i++ ) {
             ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MINUS].array[i])) );
         }
-        temperature = -temperature;
     } else {
         for( i = 0; i < size; i++ ) {
             ledMatrix.setColumn(offset+i, 0x00);
@@ -79,14 +96,15 @@ void display_printtemperature(int temperature) {
     }
     offset += size + 2;
 
-    uint8_t t1 = temperature / 10;
-    uint8_t t2 = temperature % 10;
 
-    size = pgm_read_byte(&(digits[t1].size));
-    for( i = 0; i < size; i++ ) {
-        ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t1].array[i])) );
+    if( t1 ) {
+        size = pgm_read_byte(&(digits[t1].size));
+        for( i = 0; i < size; i++ ) {
+            ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t1].array[i])) );
+        }
+        offset += size + 2;
     }
-    offset += size + 2;
+
     size = pgm_read_byte(&(digits[t2].size));
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[t2].array[i])) );
