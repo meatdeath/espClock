@@ -204,11 +204,11 @@ void loop() {
             pressureLabelsStr += "\"";
             html_PressureHistory += time/2;
             html_PressureHistory += "h";
-            if(time&1 == 0) {
+            if(time&1) {
+                html_PressureHistory += "30m";
+            } else {
                 pressureLabelsStr += time/2;
                 pressureLabelsStr += "h";
-            } else {
-                html_PressureHistory += "30m";
             }
             pressureLabelsStr += "\"";
             html_PressureHistory += "</td><td>";
