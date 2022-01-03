@@ -16,7 +16,7 @@ volatile bool local_time_updated = false;
 
 
 #define DEFAULT_SENSOR_UPDATE_TIME  60 // in seconds (max 255)
-#define COLLECT_PRESSURE_HISTORY_PERIOD 60*30   // add point to pressure history period = 30min
+#define COLLECT_PRESSURE_HISTORY_PERIOD 60*120//60*30   // add point to pressure history period = 30min
 
 
 uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
@@ -57,6 +57,12 @@ volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
         .autoupdate = true,
         .updatetime = COLLECT_PRESSURE_HISTORY_PERIOD,
         .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD
+    },
+    {   // SW_TIMER_GET_AMBIANCE
+        .triggered = true,
+        .autoupdate = true,
+        .updatetime = 1,
+        .downcounter = 1
     }
 };
 

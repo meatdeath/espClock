@@ -1,5 +1,6 @@
 #include "web.h"
 #include "config.h"
+#include "rtc.h"
 #include <NTPClient.h>
 
 
@@ -375,7 +376,13 @@ void createWebServer(int webtype)
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             IPAddress ip = WiFi.localIP();
             String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
-            // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
+            String updateDateTime = (String)rtc_dt.year() + "/" + 
+                                    (String)rtc_dt.month() + "/" + 
+                                    (String)rtc_dt.day() + " " +
+                                    (String)rtc_dt.hour() + ":" + 
+                                    (String)rtc_dt.minute()+ ":" + 
+                                    (String)rtc_dt.second() ;
+        // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
             content = 
                 "<!DOCTYPE HTML>"
                 "<html>"
@@ -409,7 +416,7 @@ void createWebServer(int webtype)
                         "<p>IP address: ";
             content += ip.toString();
             content += "</p>"
-                        "<h3>Pressure</h3>"
+                        "<h3>Pressure history</h3>"
                         "<p>"
                             "<canvas id='pressureChart'></canvas>"
                         "</p>"
@@ -434,6 +441,7 @@ void createWebServer(int webtype)
                         "<a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>"
                         "<br>"
                         "<hr>"
+                        "<p>" + updateDateTime + "</p>"
                     "</body>"
                     "<script>"
                         "new Chart('pressureChart', {"
@@ -457,6 +465,10 @@ void createWebServer(int webtype)
                             "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
                             "xhttp.open('GET', '/time_offset'+param, true);"
                             "xhttp.send();"
+                        "}"
+                        "const myTimeout = setTimeout (reloadPage, 60*60*1000);"
+                        "function reloadPage() {"
+                            "location.reload();"
                         "}"
                     "</script>"
                 "</html>";

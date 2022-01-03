@@ -30,6 +30,8 @@ uint16_t pressure_history_size = 0;
 uint16_t pressure_history_start = 0;
 uint16_t pressure_history_end = 0;
 
+const int analogInPin = A0;  // ESP8266 Analog Pin ADC0 = A0
+
 //--------------------------------------------------------------------------------------------------------
 
 void read_bmp_sensor() {
@@ -142,8 +144,11 @@ enum dispays_en {
 
 uint8_t show_display = DISPLAY_CLOCK;
 uint8_t last_shown_display = DISPLAY_CLOCK;
+uint8_t intensity = 15;
+uint8_t measured_intensity = 1;
 
 void loop() {
+    int ambianceValue = 0;  // value abiance read from the port
     wifi_processing();
 
     if(softreset==true) {
@@ -179,6 +184,31 @@ void loop() {
         }
     }
 
+    if( swTimerIsTriggered(SW_TIMER_GET_AMBIANCE, true) && pressure != 0 ) {
+        ambianceValue = analogRead(analogInPin);
+        // 3.3v -> 1024
+        // 2.4v -> 740
+        // 0.8v -> 250
+        const int lower_light = 250;
+        const int higher_light = 740;
+        measured_intensity = 1;
+        if( ambianceValue > higher_light ) {
+            measured_intensity = 15;
+        } else if (ambianceValue > lower_light ) {
+            measured_intensity = ((double)(ambianceValue-lower_light)/(higher_light-lower_light))*15 + 1;
+        }
+        Serial.printf("ambiance : %d\r\n", ambianceValue);
+        Serial.printf("lightness : %d\r\n", 16-measured_intensity);
+    }
+    if( intensity != measured_intensity ) {
+        if( intensity > measured_intensity ) {
+            intensity--;
+        } else if( intensity < measured_intensity ) {
+            intensity++;
+        }
+        display_intensity(16-intensity);
+    }
+
     if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
         pressure_history[pressure_history_end++] = pressure;
         if( pressure_history_end == PRESSURE_HISTORY_SIZE )
@@ -202,12 +232,10 @@ void loop() {
         {
             html_PressureHistory += "<tr><td>";
             pressureLabelsStr += "\"";
-            html_PressureHistory += time/2;
+            html_PressureHistory += time*2;
             html_PressureHistory += "h";
-            if(time&1) {
-                html_PressureHistory += "30m";
-            } else {
-                pressureLabelsStr += time/2;
+            if((time&1) == 0) {
+                pressureLabelsStr += time*2;
                 pressureLabelsStr += "h";
             }
             pressureLabelsStr += "\"";

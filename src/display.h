@@ -96,6 +96,7 @@ enum __display_symbols {
 void display_init( void );
 void display_printstarting(void);
 void display_printtime( byte hours, byte minutes, byte seconds, byte format );
+void display_intensity(byte intensity);
 void display_brightness(uint8_t percentage);
 
 void display_printtemperature(int temperature);

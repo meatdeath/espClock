@@ -8,6 +8,10 @@ void display_init(void) {
     ledMatrix.setTextOffset(32);
 }
 
+void display_intensity(byte intensity) {
+    ledMatrix.setIntensity(intensity);
+}
+
 void display_brightness(uint8_t percentage) {
     if( percentage <= 6)       ledMatrix.setIntensity(0);
     else if( percentage <= 12) ledMatrix.setIntensity(1);
