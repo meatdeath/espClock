@@ -117,6 +117,7 @@ void launchWeb(int webtype) {
     Serial.println(WiFi.softAPIP());
     createWebServer(webtype);
     // Start the server
+    AsyncElegantOTA.begin(&server);    // Start ElegantOTA
     server.begin();
     Serial.println("Server started"); 
 }
