@@ -11,6 +11,11 @@
 #include "web.h"
 
 #include <NTPClient.h>
+#include <extEEPROM.h>
+
+
+extEEPROM eeprom(kbits_32, 1, 64, 0x57);         //device size, number of devices, page size
+uint8_t eepStatus;
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -113,25 +118,17 @@ void setup() {
 
     WifiState = STATE_WIFI_IDLE;
 
-    // if( config.wifi.valid ) {
-    //     WiFi.begin( config.wifi.name, config.wifi.password );
-    //     if (testWifi()) {
-    //         launchWeb(WEB_PAGES_NORMAL);            
-    //         timeClient.begin();
-    //         time_sync_with_ntp_enabled = true;
-    //         return;
-    //     } 
-    //     else 
-    //     {
-    //         Serial.println("WiFi connection wasn't established. Switch to AP.");
-    //     }
-    // }
-    // else
-    // {
-    //     Serial.println("EEPROM doesn't contain WiFi connection information.");
-    //     Serial.println("Switch to AP mode immediately.");
-    // }
-    // setupAP();
+    eepStatus = eeprom.begin(eeprom.twiClock400kHz);
+    if (eepStatus) {
+        Serial.print(F("extEEPROM.begin() failed, status = "));
+        Serial.println(eepStatus);
+        while (1);
+        // eeprom.write(addr, *data);
+        // eeprom.write(addr, data, len);
+        // *data = eeprom.read(addr);
+        // eeprom.read(addr, data, len);
+    }
+
     time_sync_with_ntp_enabled = false;
 }
 
