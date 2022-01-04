@@ -2,6 +2,7 @@
 #include "config.h"
 #include "rtc.h"
 #include <NTPClient.h>
+#include <AsyncElegantOTA.h>
 
 
 const byte DNS_PORT = 53;
