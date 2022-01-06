@@ -13,6 +13,9 @@
 #include <NTPClient.h>
 #include <extEEPROM.h>
 
+// TODO: reimplement timeClient.getRawEpochTime()
+// TODO: reimplement ledMatrix.setTextOffset(...)
+// TODO: reimplement ledMatrix.Rotate90()
 
 extEEPROM eeprom(kbits_32, 1, 64, 0x57);         //device size, number of devices, page size
 uint8_t eepStatus;
@@ -36,7 +39,19 @@ uint16_t pressure_history_end = 0;
 
 const int analogInPin = A0;  // ESP8266 Analog Pin ADC0 = A0
 
-void eeprom_add_history_item( uint32_t time, float pressure );
+
+typedef struct pressure_history_st {
+    unsigned long time;
+    float pressure;
+} pressure_history_t;
+
+#define EEPROM_HISTORY_START_ADDR   128
+#define EEPROM_HISTORY_ITEM_SIZE    sizeof(pressure_history_t)
+
+pressure_history_t pressure_history_item[PRESSURE_HISTORY_SIZE] = {0};
+
+void eeprom_add_history_item( unsigned long time, float pressure );
+void eeprom_restore_pressure_history(unsigned long time);
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -130,6 +145,14 @@ void setup() {
         // eeprom.read(addr, data, len);
     }
 
+    unsigned long time;
+    if(time_sync_with_ntp_enabled) {
+        time = timeClient.getRawEpochTime() + config.clock.hour_offset*3600 + config.clock.minute_offset*60 + rtc_SecondsSinceUpdate;
+    } else {
+        time = 946684800 + rtc_dt.secondstime() + rtc_SecondsSinceUpdate;
+    }
+    eeprom_restore_pressure_history(time);
+
     time_sync_with_ntp_enabled = false;
 }
 
@@ -209,7 +232,13 @@ void loop() {
     }
 
     if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
-        eeprom_add_history_item( epoch_time, pressure );
+        unsigned long timeinsec;
+        if(time_sync_with_ntp_enabled) {
+            timeinsec = timeClient.getRawEpochTime() + config.clock.hour_offset*3600 + config.clock.minute_offset*60 + rtc_SecondsSinceUpdate;
+        } else {
+            timeinsec = 946684800 + rtc_dt.secondstime() + rtc_SecondsSinceUpdate;
+        }
+        eeprom_add_history_item( timeinsec, pressure );
         pressureLabelsStr = "";
         pressureValuesStr = "";
         Serial.println("----- Pressure history -----");
@@ -309,17 +338,7 @@ void loop() {
 }
 
 
-typedef struct pressure_history_st {
-    uint32_t time;
-    float pressure;
-} pressure_history_t;
-
-#define EEPROM_HISTORY_START_ADDR   128
-#define EEPROM_HISTORY_ITEM_SIZE    sizeof(pressure_history_t)
-
-pressure_history_t pressure_history_item[PRESSURE_HISTORY_SIZE] = {0};
-
-void eeprom_add_history_item( uint32_t time, float pressure ) {
+void eeprom_add_history_item( unsigned long time, float pressure ) {
     unsigned long addr = EEPROM_HISTORY_START_ADDR + pressure_history_end*EEPROM_HISTORY_ITEM_SIZE;
     pressure_history_item[pressure_history_end].time = time;
     pressure_history_item[pressure_history_end].pressure = pressure;
@@ -337,4 +356,85 @@ void eeprom_add_history_item( uint32_t time, float pressure ) {
     {
         pressure_history_size++;
     }
+}
+
+void eeprom_restore_pressure_history(unsigned long time) {
+    int i;
+    eeprom.read( EEPROM_HISTORY_START_ADDR, 
+                (uint8_t*)(&pressure_history_item[0]), 
+                PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
+    pressure_history_start = 0;
+    pressure_history_end = 0;
+    pressure_history_size = 0;
+
+    // Identify Size, Start and End of pressure history
+    for( pressure_history_size = 0; pressure_history_size < PRESSURE_HISTORY_SIZE; pressure_history_size++ ) 
+    {
+        if( pressure_history_item[pressure_history_size].pressure < 700 || 
+            pressure_history_item[pressure_history_size].pressure > 800 ||
+            pressure_history_item[pressure_history_size].time == (unsigned long)-1 )
+        {
+            // stop if no more item in pressure cicle-buffer
+            break;
+        }
+        if( pressure_history_size == 0 )
+        {
+            pressure_history_end++;
+        } 
+        else 
+        {
+            if( pressure_history_item[pressure_history_start].time > pressure_history_item[pressure_history_size].time )
+            {
+                pressure_history_start = pressure_history_size;
+                if( pressure_history_start == PRESSURE_HISTORY_SIZE )
+                {
+                    pressure_history_start = 0;
+                }
+            }
+            if( pressure_history_item[pressure_history_end-1].time > pressure_history_item[pressure_history_size].time )
+            {
+                pressure_history_end = pressure_history_size;
+                if( pressure_history_end == PRESSURE_HISTORY_SIZE )
+                {
+                    pressure_history_end = 0;
+                }
+            }
+        }
+    }
+    
+    // Remove outdated items
+    for( i = 0; i < pressure_history_size; i++ )
+    {
+        if( pressure_history_item[pressure_history_start].time < (time - PRESSURE_HISTORY_SIZE*2*60*60) )
+        {
+            //pressure_history_item[pressure_history_start].time = (uint32_t)-1;
+            memset( (uint8_t*)&pressure_history_item[pressure_history_start].time, 0xFF, EEPROM_HISTORY_ITEM_SIZE );
+            pressure_history_start++;
+            pressure_history_size--;
+            if( pressure_history_start == PRESSURE_HISTORY_SIZE )
+            {
+                pressure_history_start = 0;
+            }
+        }
+    } 
+
+    // Align history position
+    if( pressure_history_size < PRESSURE_HISTORY_SIZE && pressure_history_start != 0 ) 
+    {
+        while(pressure_history_start != 0)
+        {
+            pressure_history_t tmp_item;
+            memcpy( (uint8_t*)&tmp_item, (uint8_t*)&pressure_history_item[0], EEPROM_HISTORY_ITEM_SIZE );
+            for( i = 0; i < (PRESSURE_HISTORY_SIZE-1); i++ )
+            {
+                memcpy( (uint8_t*)&pressure_history_item[i], (uint8_t*)&pressure_history_item[i+1], EEPROM_HISTORY_ITEM_SIZE );
+            }
+            memcpy( (uint8_t*)&pressure_history_item[PRESSURE_HISTORY_SIZE-1], (uint8_t*)&tmp_item, EEPROM_HISTORY_ITEM_SIZE );
+        }
+    }
+
+    // Update pressure history in eeprom
+    eeprom.write( EEPROM_HISTORY_START_ADDR, 
+                (uint8_t*)(&pressure_history_item[0]), 
+                PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
 }
