@@ -340,6 +340,7 @@ void loop() {
 
 void eeprom_add_history_item( unsigned long time, float pressure ) {
     unsigned long addr = EEPROM_HISTORY_START_ADDR + pressure_history_end*EEPROM_HISTORY_ITEM_SIZE;
+    Serial.printf("Adding history item: time=0x%08x%08x, pressure=%3.1f\r\n", (uint32_t)(time>>32), (uint32_t)(time&0xFFFFFFFF) );
     pressure_history_item[pressure_history_end].time = time;
     pressure_history_item[pressure_history_end].pressure = pressure;
     eeprom.write( addr, (uint8_t*)&pressure_history_item[pressure_history_end], EEPROM_HISTORY_ITEM_SIZE );
@@ -372,7 +373,10 @@ void eeprom_restore_pressure_history(unsigned long time) {
     Serial.println("1. Identify Size, Start and End of pressure history...");
     for( pressure_history_size = 0; pressure_history_size < PRESSURE_HISTORY_SIZE; pressure_history_size++ ) 
     {
+        unsigned long time = pressure_history_item[pressure_history_size].time;
         Serial.printf("Check item index %d... ", pressure_history_size);
+        Serial.printf("History item data: time=0x%08x%08x, pressure=%3.1f\r\n", (uint32_t)(time>>32), (uint32_t)(time&0xFFFFFFFF), pressure_history_item[pressure_history_size].pressure );
+    
         if( pressure_history_item[pressure_history_size].pressure < 700 || 
             pressure_history_item[pressure_history_size].pressure > 800 ||
             pressure_history_item[pressure_history_size].time == (unsigned long)-1 )
@@ -390,12 +394,12 @@ void eeprom_restore_pressure_history(unsigned long time) {
         else 
         {
             Serial.print("Check time... ");
-            if( pressure_history_item[pressure_history_s tart].time > pressure_history_item[pressure_history_size].time )
+            if( pressure_history_item[pressure_history_start].time > pressure_history_item[pressure_history_size].time )
             {
                 pressure_history_start = pressure_history_size;
                 Serial.printf("found older timestamp\r\npressure_history_start=%d\r\n", pressure_history_start);
             }
-            else if( pressure_history_item[pressure_history_end-1].time > pressure_history_item[pressure_history_size].time )
+            else if( pressure_history_item[pressure_history_end-1].time >= pressure_history_item[pressure_history_size].time )
             {
                 pressure_history_end = pressure_history_size;
                 if( pressure_history_end == PRESSURE_HISTORY_SIZE )
