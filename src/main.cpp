@@ -13,6 +13,13 @@
 #include <NTPClient.h>
 #include <extEEPROM.h>
 
+class myNTPClient : public NTPClient {
+
+  public:
+    myNTPClient(UDP& udp): NTPClient{udp} {};
+    unsigned long getRawEpochTime();
+};
+
 // TODO: reimplement timeClient.getRawEpochTime()
 // TODO: reimplement ledMatrix.setTextOffset(...)
 // TODO: reimplement ledMatrix.Rotate90()
@@ -475,3 +482,35 @@ void eeprom_restore_pressure_history(unsigned long time) {
                 (uint8_t*)(&pressure_history_item[0]), 
                 PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
 }
+
+// unsigned long NTPClient::getRawEpochTime() {
+//   return this->_timeOffset + // User offset
+//          this->_currentEpoc; // Epoc returned by the NTP server
+// }
+
+// void LedMatrix::setTextOffset(byte offset) {
+//     myTextOffset = (myTextOffset-offset) % ((int)myText.length() * myCharWidth + myNumberOfDevices * 8);
+//     if (myTextOffset == 0 && myNextText.length() > 0) {
+//         myText = myNextText;
+//         myNextText = "";
+//         calculateTextAlignmentOffset();
+//     }
+// }
+
+// void LedMatrix::Rotate90() {
+//     for( byte device = 0; device < myNumberOfDevices; device++ ) {
+//         byte result[8] = {0};
+//         for( byte i = 0; i < 8; i++ ) {
+//             for( byte j = 0; j < 8; j++ ) {
+//                 if( cols[i+device*8] & (1<<j) ) {
+//                     result[7-j] |= 1<<i;
+//                 } else {
+//                     result[7-j] &= ~(1<<i);
+//                 }
+//             }
+//         }
+//         for( byte i = 0; i < 8; i++ ) {
+//             cols[device*8+i] = result[i];
+//         }
+//     }
+// }
