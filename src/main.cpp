@@ -360,6 +360,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
 
 void eeprom_restore_pressure_history(unsigned long time) {
     int i;
+    Serial.println("Read history from EEPROM");
     eeprom.read( EEPROM_HISTORY_START_ADDR, 
                 (uint8_t*)(&pressure_history_item[0]), 
                 PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
@@ -368,60 +369,79 @@ void eeprom_restore_pressure_history(unsigned long time) {
     pressure_history_size = 0;
 
     // Identify Size, Start and End of pressure history
+    Serial.println("1. Identify Size, Start and End of pressure history...");
     for( pressure_history_size = 0; pressure_history_size < PRESSURE_HISTORY_SIZE; pressure_history_size++ ) 
     {
+        Serial.printf("Check item index %d... ", pressure_history_size);
         if( pressure_history_item[pressure_history_size].pressure < 700 || 
             pressure_history_item[pressure_history_size].pressure > 800 ||
             pressure_history_item[pressure_history_size].time == (unsigned long)-1 )
         {
             // stop if no more item in pressure cicle-buffer
+            Serial.println("no valid data found");
             break;
         }
+        Serial.println("data found");
         if( pressure_history_size == 0 )
         {
             pressure_history_end++;
+            Serial.println("Always allow first item");
         } 
         else 
         {
+            Serial.print("Check time... ");
             if( pressure_history_item[pressure_history_start].time > pressure_history_item[pressure_history_size].time )
             {
                 pressure_history_start = pressure_history_size;
-                if( pressure_history_start == PRESSURE_HISTORY_SIZE )
-                {
-                    pressure_history_start = 0;
-                }
+                Serial.printf("found older timestamp\r\npressure_history_start=%d\r\n", pressure_history_start);
             }
-            if( pressure_history_item[pressure_history_end-1].time > pressure_history_item[pressure_history_size].time )
+            else if( pressure_history_item[pressure_history_end-1].time > pressure_history_item[pressure_history_size].time )
             {
                 pressure_history_end = pressure_history_size;
                 if( pressure_history_end == PRESSURE_HISTORY_SIZE )
                 {
                     pressure_history_end = 0;
                 }
+                Serial.printf("found newer timestamp\r\npressure_history_end=%d\r\n", pressure_history_end);
+            }
+            else
+            {
+                Serial.println("no changes. WARNING!!!");
             }
         }
     }
+    Serial.printf("Start=%d End=%d Size=%d\r\n",pressure_history_start, pressure_history_end, pressure_history_size);
     
     // Remove outdated items
+    Serial.println("2. Remove outdated items");
+    Serial.printf("Current time: 0x%08x%08x\r\n", (uint32_t)(time>>32), (uint32_t)(time&0xFFFFFFFF) );
     for( i = 0; i < pressure_history_size; i++ )
     {
+        Serial.printf("Check item by index %d... ", pressure_history_start);
         if( pressure_history_item[pressure_history_start].time < (time - PRESSURE_HISTORY_SIZE*2*60*60) )
         {
+            Serial.printf("time 0x%08x%08x outdated\r\n");
             //pressure_history_item[pressure_history_start].time = (uint32_t)-1;
-            memset( (uint8_t*)&pressure_history_item[pressure_history_start].time, 0xFF, EEPROM_HISTORY_ITEM_SIZE );
+            memset( (uint8_t*)&pressure_history_item[pressure_history_start], 0xFF, EEPROM_HISTORY_ITEM_SIZE );
             pressure_history_start++;
             pressure_history_size--;
             if( pressure_history_start == PRESSURE_HISTORY_SIZE )
             {
                 pressure_history_start = 0;
             }
+            Serial.printf("Start index moved to %d\r\n");
+        } else {
+            Serial.println("good");
         }
     } 
+    Serial.printf("Start=%d End=%d Size=%d\r\n",pressure_history_start, pressure_history_end, pressure_history_size);
+    
 
     // Align history position
-    if( pressure_history_size < PRESSURE_HISTORY_SIZE && pressure_history_start != 0 ) 
+    Serial.println("3. Align history position");
+    if( pressure_history_size < PRESSURE_HISTORY_SIZE ) 
     {
-        while(pressure_history_start != 0)
+        while( pressure_history_start != 0 )
         {
             pressure_history_t tmp_item;
             memcpy( (uint8_t*)&tmp_item, (uint8_t*)&pressure_history_item[0], EEPROM_HISTORY_ITEM_SIZE );
@@ -430,8 +450,20 @@ void eeprom_restore_pressure_history(unsigned long time) {
                 memcpy( (uint8_t*)&pressure_history_item[i], (uint8_t*)&pressure_history_item[i+1], EEPROM_HISTORY_ITEM_SIZE );
             }
             memcpy( (uint8_t*)&pressure_history_item[PRESSURE_HISTORY_SIZE-1], (uint8_t*)&tmp_item, EEPROM_HISTORY_ITEM_SIZE );
-        }
+            pressure_history_start--;
+            if(pressure_history_end == 0)
+                pressure_history_end = PRESSURE_HISTORY_SIZE;
+            pressure_history_end--;
+            memset( (uint8_t*)&pressure_history_item[pressure_history_end], 0xFF, EEPROM_HISTORY_ITEM_SIZE );
+            Serial.printf("Moved: Start=%d End=%d\r\n",pressure_history_start, pressure_history_end);
+        }   
+    } 
+    else
+    {
+        Serial.println("Alignment not required.");
     }
+    Serial.printf("Start=%d End=%d Size=%d\r\n",pressure_history_start, pressure_history_end, pressure_history_size);
+    
 
     // Update pressure history in eeprom
     eeprom.write( EEPROM_HISTORY_START_ADDR, 
