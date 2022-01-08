@@ -1,0 +1,104 @@
+Startup
+Init MAX7219
+Time offset... -5 hours 00 minute(s)
+Init pin interrupt
+Init pin interrupt done
+RTC init time: 04:14:57
+rtc_GetDT
+RTC time: 04:14:57
+Temperature = 19.82 *C
+Pressure = 759.49 Pa = 5.70mm Hg
+Approx altitude = 5.66 m
+
+Read history from EEPROM
+1. Identify Size, Start and End of pressure history...
+Check item index 0... data found
+Always allow first item
+Check item index 1... data found
+Check time... no changes. WARNING!!!
+Check item index 2... data found
+Check time... no changes. WARNING!!!
+Check item index 3... no valid data found
+Start=0 End=1 Size=3
+2. Remove outdated items
+Current time: 0x0000000061d90fc1
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Start=0 End=1 Size=3
+3. Align history position
+Start=0 End=1 Size=3
+Network name: Xiaomi_24
+Password: Nirishka2@
+Waiting for Wifi to connect ambiance : 297
+lightness : 14
+----- Pressure history -----
+750.90
+759.49
+----------------------------
+
+
+
+
+Read history from EEPROM
+1. Identify Size, Start and End of pressure history...
+Check item index 0... data found
+Always allow first item
+Check item index 1... data found
+Check time... no changes. WARNING!!!
+Check item index 2... data found
+Check time... no changes. WARNING!!!
+Check item index 3... data found
+Check time... no changes. WARNING!!!
+Check item index 4... data found
+Check time... no changes. WARNING!!!
+Check item index 5... data found
+Check time... no changes. WARNING!!!
+Check item index 6... data found
+Check time... no changes. WARNING!!!
+Check item index 7... data found
+Check time... no changes. WARNING!!!
+Check item index 8... data found
+Check time... no changes. WARNING!!!
+Check item index 9... data found
+Check time... no changes. WARNING!!!
+Check item index 10... data found
+Check time... no changes. WARNING!!!
+Check item index 11... data found
+Check time... no changes. WARNING!!!
+Check item index 12... data found
+Check time... no changes. WARNING!!!
+Check item index 13... data found
+Check time... no changes. WARNING!!!
+Check item index 14... data found
+Check time... no changes. WARNING!!!
+Check item index 15... data found
+Check time... no changes. WARNING!!!
+Check item index 16... no valid data found
+Start=0 End=1 Size=16
+2. Remove outdated items
+Current time: 0x0000000061d91050
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Check item by index 0... good
+Start=0 End=1 Size=16
+3. Align history position
+Start=0 End=1 Size=16
+
+
+
+
+

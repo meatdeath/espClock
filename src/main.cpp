@@ -390,7 +390,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
         else 
         {
             Serial.print("Check time... ");
-            if( pressure_history_item[pressure_history_start].time > pressure_history_item[pressure_history_size].time )
+            if( pressure_history_item[pressure_history_s tart].time > pressure_history_item[pressure_history_size].time )
             {
                 pressure_history_start = pressure_history_size;
                 Serial.printf("found older timestamp\r\npressure_history_start=%d\r\n", pressure_history_start);
@@ -418,9 +418,10 @@ void eeprom_restore_pressure_history(unsigned long time) {
     for( i = 0; i < pressure_history_size; i++ )
     {
         Serial.printf("Check item by index %d... ", pressure_history_start);
-        if( pressure_history_item[pressure_history_start].time < (time - PRESSURE_HISTORY_SIZE*2*60*60) )
+        unsigned long item_time = pressure_history_item[pressure_history_start].time;
+        if( item_time < (time - PRESSURE_HISTORY_SIZE*2*60*60) )
         {
-            Serial.printf("time 0x%08x%08x outdated\r\n");
+            Serial.printf("time 0x%08x%08x outdated\r\n", (uint32_t)(item_time>>32), (uint32_t)(item_time&0xFFFFFFFF));
             //pressure_history_item[pressure_history_start].time = (uint32_t)-1;
             memset( (uint8_t*)&pressure_history_item[pressure_history_start], 0xFF, EEPROM_HISTORY_ITEM_SIZE );
             pressure_history_start++;
