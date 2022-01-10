@@ -262,10 +262,20 @@ void loop() {
                 pressureLabelsStr += "h";
             }
             pressureLabelsStr += "\"";
+
             html_PressureHistory += "</td><td>";
 
-            pressureValuesStr += pressure_history_item[i].pressure;
-            html_PressureHistory += pressure_history_item[i].pressure;
+            if( pressure_history_item[i].pressure != 800 )
+            {
+                pressureValuesStr += pressure_history_item[i].pressure;
+                html_PressureHistory += pressure_history_item[i].pressure;
+            }
+            else
+            {
+                pressureValuesStr += "null";
+                html_PressureHistory += '-';
+            }
+
             html_PressureHistory += "</td></tr>";
 
             Serial.println(pressure_history_item[i].pressure);
@@ -420,6 +430,29 @@ void eeprom_restore_pressure_history(unsigned long time) {
     eeprom.write( EEPROM_HISTORY_START_ADDR, 
                 (uint8_t*)(&pressure_history_item[0]), 
                 PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
+
+    // Add holes
+    if( pressure_history_size > 0 )
+    {
+        int last_item_index = pressure_history_end;
+        if( last_item_index == 0 )
+            last_item_index = PRESSURE_HISTORY_SIZE-1;
+        else
+            last_item_index--;
+        unsigned long last_item_time = pressure_history_item[last_item_index].time;
+
+        while( last_item_time < (time-2*60*60) )
+        {
+            last_item_time += 2*60*60;
+            eeprom_add_history_item( last_item_time, 800 );
+        }
+
+        unsigned long last_time_difference = time - last_item_time;
+        // timer is triggered by default
+        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = last_time_difference;
+    }
+
 }
 
 // unsigned long NTPClient::getRawEpochTime() {
