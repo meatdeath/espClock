@@ -141,7 +141,7 @@ void rtc_Init(void) {
 }
 
 void rtc_GetDT(DateTime *dst_dt) {
-    Serial.println("rtc_GetDT");
+    //Serial.println("rtc_GetDT");
     *dst_dt = rtc.now();
     rtc_SecondsSinceUpdate = 0;
 }
@@ -149,12 +149,12 @@ void rtc_GetDT(DateTime *dst_dt) {
 void rtc_SetDT(DateTime dt) {
     rtc.adjust(dt);
     rtc_SecondsSinceUpdate = 0;
-    Serial.println("rtc_SetDT");
+    //Serial.println("rtc_SetDT");
 }
 
 void rtc_SetEpoch(uint32_t epoch_time) {
     rtc.adjust( DateTime(epoch_time) );
     rtc_SecondsSinceUpdate = 0;
-    Serial.println("rtc_SetEpoch");
+    //Serial.println("rtc_SetEpoch");
 }
 
