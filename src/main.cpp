@@ -59,6 +59,7 @@ pressure_history_t pressure_history_item[PRESSURE_HISTORY_SIZE] = {0};
 
 void eeprom_add_history_item( unsigned long time, float pressure );
 void eeprom_restore_pressure_history(unsigned long time);
+void generate_pressure_history(void);
 
 //--------------------------------------------------------------------------------------------------------
 
@@ -246,50 +247,7 @@ void loop() {
             timeinsec = 946684800 + rtc_dt.secondstime() + rtc_SecondsSinceUpdate;
         }
         eeprom_add_history_item( timeinsec, pressure );
-        pressureLabelsStr = "";
-        pressureValuesStr = "";
-        Serial.println("----- Pressure history -----");
-        html_PressureHistory = "<table><tr><td>Time ago</td><td>Pressure, mm</td></tr>";
-        uint16_t time = pressure_history_size-1;
-        for(uint16_t i = pressure_history_start; i != pressure_history_end; )
-        {
-            html_PressureHistory += "<tr><td>";
-            pressureLabelsStr += "\"";
-            html_PressureHistory += time*2;
-            html_PressureHistory += "h";
-            if((time&1) == 0) {
-                pressureLabelsStr += time*2;
-                pressureLabelsStr += "h";
-            }
-            pressureLabelsStr += "\"";
-
-            html_PressureHistory += "</td><td>";
-
-            if( pressure_history_item[i].pressure != 800 )
-            {
-                pressureValuesStr += pressure_history_item[i].pressure;
-                html_PressureHistory += pressure_history_item[i].pressure;
-            }
-            else
-            {
-                pressureValuesStr += "null";
-                html_PressureHistory += '-';
-            }
-
-            html_PressureHistory += "</td></tr>";
-
-            Serial.println(pressure_history_item[i].pressure);
-            i++;
-            if( i == PRESSURE_HISTORY_SIZE )
-                i = 0; 
-            if( time ) {
-                pressureLabelsStr += ",";
-                pressureValuesStr += ",";
-            }
-            time--;
-        }
-        html_PressureHistory += "</table>";
-        Serial.println("----------------------------");
+        generate_pressure_history();
     }
 
     switch(show_display) {
@@ -354,6 +312,53 @@ void loop() {
     delay(1);
 }
 
+void generate_pressure_history(void) {
+    pressureLabelsStr = "";
+    pressureValuesStr = "";
+    Serial.println("----- Pressure history -----");
+    html_PressureHistory = "<table><tr><td>Time ago</td><td>Pressure, mm</td></tr>";
+    uint16_t time = pressure_history_size-1;
+    for(uint16_t i = pressure_history_start; i != pressure_history_end; )
+    {
+        html_PressureHistory += "<tr><td>";
+        pressureLabelsStr += "\"";
+        html_PressureHistory += time*2;
+        html_PressureHistory += "h";
+        if((time&1) == 0) {
+            pressureLabelsStr += time*2;
+            pressureLabelsStr += "h";
+        }
+        pressureLabelsStr += "\"";
+
+        html_PressureHistory += "</td><td>";
+
+        if( pressure_history_item[i].pressure != 800 )
+        {
+            pressureValuesStr += pressure_history_item[i].pressure;
+            html_PressureHistory += pressure_history_item[i].pressure;
+        }
+        else
+        {
+            pressureValuesStr += "null";
+            html_PressureHistory += '-';
+        }
+
+        html_PressureHistory += "</td></tr>";
+
+        Serial.println(pressure_history_item[i].pressure);
+        i++;
+        if( i == PRESSURE_HISTORY_SIZE )
+            i = 0; 
+        if( time ) {
+            pressureLabelsStr += ",";
+            pressureValuesStr += ",";
+        }
+        time--;
+    }
+    html_PressureHistory += "</table>";
+    Serial.println("----------------------------");
+}
+
 
 void eeprom_add_history_item( unsigned long time, float pressure ) {
     unsigned long addr = EEPROM_HISTORY_START_ADDR + pressure_history_end*EEPROM_HISTORY_ITEM_SIZE;
@@ -377,7 +382,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
 }
 
 void eeprom_restore_pressure_history(unsigned long time) {
-    int i;
+    int i, j;
     pressure_history_start = 0;
     pressure_history_end = 0;
     pressure_history_size = 0;
@@ -388,6 +393,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
                 PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
 
     // Remove invalid and outdated items
+    Serial.println("1. Remove invalid and outdated items");
     for( i = 1; i < PRESSURE_HISTORY_SIZE; i++ ) 
     {
         if( pressure_history_item[i].time > time ||
@@ -396,13 +402,21 @@ void eeprom_restore_pressure_history(unsigned long time) {
             pressure_history_item[i].pressure > 800 )
         {
             memset((uint8_t*)&(pressure_history_item[i]), 0xFF, sizeof(pressure_history_t) );
+        } 
+        else 
+        {
+            Serial.printf("Keep item on index=%d, pressure=%f, time=%lu\r\n", 
+                i,
+                pressure_history_item[i].pressure, 
+                pressure_history_item[i].time);
         }
     }
                 
-    //Serial.println("Sort pressure history...");
+    Serial.println("2. Sort pressure history");
     for( i = 1; i < PRESSURE_HISTORY_SIZE; i++ ) 
     {
-        for( int j = i; j > 0 && pressure_history_item[j-1].time > pressure_history_item[j].time; j-- )
+        Serial.printf("Move item from %d ", i);
+        for( j = i; j > 0 && pressure_history_item[j-1].time > pressure_history_item[j].time; j-- )
         {
             pressure_history_t tmp;
             tmp.time = pressure_history_item[j-1].time;
@@ -414,8 +428,12 @@ void eeprom_restore_pressure_history(unsigned long time) {
             pressure_history_item[j].time = tmp.time;
             pressure_history_item[j].pressure = tmp.pressure;
         }
+        
+        Serial.printf("to %d\r\n", j);
     }
+
     // Determine the size of the history
+    Serial.println("3. Determine the size of the history");
     while( pressure_history_size < PRESSURE_HISTORY_SIZE && pressure_history_item[pressure_history_size].time != (unsigned long)-1 )
     {
         pressure_history_size++;
@@ -425,6 +443,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
     {
         pressure_history_end = 0;
     }
+    Serial.printf("History: start=%d, end=%d, size=%d\r\n", pressure_history_start, pressure_history_end, pressure_history_size);
 
     // Update pressure history in eeprom
     eeprom.write( EEPROM_HISTORY_START_ADDR, 
@@ -432,6 +451,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
                 PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
 
     // Add holes
+    Serial.println("4. Add holes");
     if( pressure_history_size > 0 )
     {
         int last_item_index = pressure_history_end;
@@ -440,19 +460,23 @@ void eeprom_restore_pressure_history(unsigned long time) {
         else
             last_item_index--;
         unsigned long last_item_time = pressure_history_item[last_item_index].time;
+        Serial.printf("Last item time %lu\r\n", last_item_time);
 
         while( last_item_time < (time-2*60*60) )
         {
             last_item_time += 2*60*60;
             eeprom_add_history_item( last_item_time, 800 );
+            Serial.printf("Add hole item with time %lu\r\n", last_item_time);
         }
 
         unsigned long last_time_difference = time - last_item_time;
         // timer is triggered by default
         sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
         sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = last_time_difference;
+        Serial.printf("Time diff %lus\r\n", last_time_difference);
     }
 
+    generate_pressure_history();
 }
 
 // unsigned long NTPClient::getRawEpochTime() {
