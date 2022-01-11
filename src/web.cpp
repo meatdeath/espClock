@@ -379,12 +379,17 @@ void createWebServer(int webtype)
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             IPAddress ip = WiFi.localIP();
             String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
-            String updateDateTime = (String)rtc_dt.year() + "/" + 
-                                    (String)rtc_dt.month() + "/" + 
-                                    (String)rtc_dt.day() + " " +
-                                    (String)rtc_dt.hour() + ":" + 
-                                    (String)rtc_dt.minute()+ ":" + 
-                                    (String)rtc_dt.second() ;
+            DateTime dt = rtc_dt + 
+                        TimeSpan( rtc_SecondsSinceUpdate/(3600*24), 
+                                    config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, 
+                                    config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, 
+                                    rtc_SecondsSinceUpdate%60 );
+            String updateDateTime = (String)dt.year() + "/" + 
+                                    (String)dt.month() + "/" + 
+                                    (String)dt.day() + " " +
+                                    (String)dt.hour() + ":" + 
+                                    (String)dt.minute()+ ":" + 
+                                    (String)dt.second() ;
         // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
             content = 
                 "<!DOCTYPE HTML>"

@@ -472,8 +472,8 @@ void eeprom_restore_pressure_history(unsigned long time) {
         unsigned long last_time_difference = time - last_item_time;
         // timer is triggered by default
         sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = last_time_difference;
-        Serial.printf("Time diff %lus\r\n", last_time_difference);
+        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = (2*60*60) - last_time_difference;
+        Serial.printf("Time until next pressure collection: %lus\r\n", (2*60*60) - last_time_difference);
     }
 
     generate_pressure_history();
