@@ -1,22 +1,13 @@
 #ifndef __WEB_H__
 #define __WEB_H__
+
 #include <Arduino.h>
-
-#define ENABLE_DNS
-
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include "ESPAsyncWebServer.h"
 #include <ESP8266HTTPClient.h>
-
 #include <WiFiUdp.h>
 #include <Hash.h>
-
-#ifdef ENABLE_DNS
-#include "ESPAsyncUDP.h"
-#include <ESPAsyncDNSServer.h>
-#endif
-
 
 enum _web_pages_en { 
     WEB_PAGES_NORMAL = 0,

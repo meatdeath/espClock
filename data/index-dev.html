@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>
+    <script src="script.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    <body>
+        <div id='page'>
+            <h1>ESPClock</h1>
+            <h3>Pressure history</h3>
+            <p>
+                <canvas id='pressureChart'></canvas>
+            </p>
+            <div>
+                <p>Pressure: <span id='CurrentPressureValue'></span></p>
+            </div>
+            <h3>Time correction</h3>
+
+            <p class='time_offset_section'>
+                <label for='hour_offset'>Hours</label>
+                <input type='number' id='hour_offset' name='hour_offset' value='%HOURS_OFFSET%' min='-12' max='12'>
+            </p>
+            <p class='time_offset_section'>
+                <label for='minutes_offset'>Minutes</label>
+                <input type='number' id='minutes_offset' name='minutes_offset' value='%MINUTES_OFFSET%' min='0' max='59'>
+            </p>
+            <p class='time_offset_section'>
+                <button onclick='setOffset(this);'>Update time offset</button>
+            </p>
+
+            <p>UTC Time: <span id='utc-time-string'>--/--/-- --:--:--</span></p>
+            <p>Corrected Time: <span id='corrected-time-string'>--/--/-- --:--:--</span></p>
+            <p>Current time offset: <span id='time-offset-string'>--/--/-- --:--:--</span></p>
+
+            <hr>
+            <p>IP address: <span id="device-ip"></span></p>
+            <br>
+            <a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>
+            <br>
+            <hr>
+            <!--<div>" + dbg_text + "</div>-->
+        </div>
+    </body>
+</html>

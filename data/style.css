@@ -1,0 +1,28 @@
+body { padding: 8px 16px; font-family: system-ui; }
+
+#page {
+    max-width:800px;
+    margin: auto;
+}
+
+h1 { text-align: center; }
+h3 {
+    background-color: #555555;
+    color: white;
+    padding:  8px;
+    text-align:  center;
+}
+canvas {
+    display:block;
+}
+p.time_offset_section>label {
+    display: inline-block;
+    min-width: 70px;
+}
+p.time_offset_section>input {
+    display: inline-block;
+    min-width: 50px;
+}
+button {
+    padding: 8px;
+}

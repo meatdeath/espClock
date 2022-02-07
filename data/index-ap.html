@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+		<style>
+			input[type='radio'] { margin: 0 10px 0 0; }
+		</style>
+        <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+        <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>
+    </head>
+    <body>
+        <div style='font-size:3em; padding:30px;'>
+            <h1>ESPClock</h1>
+            <p>IP address: %IP_ADDRESS%</p>
+            <hr>
+            <p>Pressure: %PRESSURE%</p>
+            <p>Temperature: %TEMPERATURE%</p>
+            <hr>
+            <p>
+                <label for='hour_offset'>Hours offset</label>
+                <input type='number' id='hour_offset' name='hour_offset' value='%HOURS_OFFSET%' min='-12' max='12' onchange='setOffset(this);'>
+            </p>
+            <p>
+                <label for='minutes_offset'>Minutes offset</label>
+                <input type='number' id='minutes_offset' name='minutes_offset' value='%MINUTES_OFFSET' min='0' max='59' onchange='setOffset(this);'>
+            </p>
+            <form method='get' action='setting'>
+                <hr>
+                <p style='margin:0 0 5px 0'>Choose a network to connect</p>
+                    %AP_LIST%
+                <br>
+                <p>
+                    <label for='pass'>Password</label>
+                    <input name='pass' type='password' length=64>
+                </p>
+                <hr>
+                <p>Authentication</p>
+                <p class='auth-field'>
+                    <label for='auth-username'>Username</label>
+                    <input type='text' id='auth-username' name='auth-username'>
+                </p>
+                <p class='auth-field'>
+                    <label for='auth-pass'>Password</label>
+                    <input type='password' id='auth-pass' name='auth-pass'>
+                </p>
+                <br>
+                <hr>
+                <button type='submit' class='btn btn-primary'>Save WiFi settings</button>
+            </form>
+            <p><button onclick="window.location.href='/clear_logs'">Clear logs</button></p>
+        </div>
+    </body>
+    <script src='https://code.jquery.com/jquery-3.2.1.slim.min.js' integrity='sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN' crossorigin='anonymous'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>
+    <script>
+        function setOffset() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+            };
+            param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;
+            xhttp.open('GET', '/time_offset'+param, true);
+            xhttp.send();
+        }
+    </script>
+</html>

@@ -1,0 +1,59 @@
+new Chart('pressureChart', {
+    type: 'line',
+    plugins: [{
+        beforeDraw: chart => {
+var ctx = chart.chart.ctx;
+var xAxis = chart.scales['time-x-axis'];
+ctx.save();
+ctx.fillStyle = 'lightgray';
+ctx.beginPath();
+console.log(xAxis);
+var x1 = xAxis.getPixelForValue('-6h');
+var x2 = xAxis.getPixelForValue('-4h');
+console.log("x1="+x1);
+console.log("x2="+x2);
+ctx.fillRect(x1,0, x2-x1, 1000);
+ctx.stroke();
+ctx.restore();
+        }
+    }],
+    data: {
+        labels: ['-10h','-9h','-8h','-7h','-6h','-5h','-4h','-3h','-2h','-1h','0h'],
+        datasets: [{
+            data: [746,748,750,760,762,755,752,747,747,744,740],
+            borderColor: 'red',
+            fill: false,
+        },{
+            xAxisID: 'time-x-axis'
+        }]
+    },
+    options: {
+        /*title:  {
+            display: true, 
+            text: 'Pressue history', 
+            fontSize: 20
+        },*/
+        legend: {
+            display: false
+        }, 
+        scales:{
+            xAxes:[{
+                id:'time-x-axis', 
+                //type:'linear', 
+                //position:'top', 
+                gridLines:{drawOnChartArea:true}, 
+                /*scaleLabels: {
+                    display: true,
+                    padding: '10px',
+                    labelString: 'Time'
+                },
+                ticks:{
+                    display:true,
+                    min:-10,
+                    max:0,
+                    stepSize:2
+                }*/
+            }]
+        }
+    }
+})

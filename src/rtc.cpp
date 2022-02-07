@@ -15,56 +15,86 @@ volatile unsigned long rtc_SecondsSinceUpdate;
 volatile bool local_time_updated = false;
 
 
-#define DEFAULT_SENSOR_UPDATE_TIME  60 // in seconds (max 255)
-#define COLLECT_PRESSURE_HISTORY_PERIOD 60*120//60*30   // add point to pressure history period = 30min
 
 
 uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
 
 volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
     {   // SW_TIMER_SENSOR_UPDATE
+        .enabled = true,
         .triggered = false,
         .autoupdate = true,
         .updatetime = sensor_update_time,
         .downcounter = sensor_update_time
     },
     {   // SW_TIMER_GET_TIME_FROM_RTC_MODULE
+        .enabled = true,
         .triggered = true,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
         .downcounter = 10
     },
     {   // SW_TIMER_RTC_MODULE_UPDATE,
+        .enabled = true,
         .triggered = false,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
         .downcounter = 60
     },
     {   // SW_TIMER_NTP_TIME_UPDATE,
+        .enabled = true,
         .triggered = true,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
         .downcounter = 30
     },
     {   // SW_TIMER_SWITCH_DISPLAY
+        .enabled = true,
         .triggered = false,
         .autoupdate = true,
         .updatetime = CLOCK_SHOW_TIME,
         .downcounter = CLOCK_SHOW_TIME
     },
     {   // SW_TIMER_COLLECT_PRESSURE_HISTORY
+        .enabled = true,
         .triggered = true,
         .autoupdate = true,
         .updatetime = COLLECT_PRESSURE_HISTORY_PERIOD,
         .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD
     },
     {   // SW_TIMER_GET_AMBIANCE
+        .enabled = true,
         .triggered = true,
         .autoupdate = true,
         .updatetime = 1,
         .downcounter = 1
+    },
+    {   // SW_TIMER_WIFI_CONNECTING
+        .enabled = false,
+        .triggered = false,
+        .autoupdate = false,
+        .updatetime = 30,
+        .downcounter = 30
     }
 };
+void swTimerStart(enum sw_timers_en sw_timer_index, uint16_t updatetime)
+{
+    sw_timer[sw_timer_index].enabled = true;
+    if( updatetime == (uint16_t)-1 )
+        sw_timer[sw_timer_index].downcounter = sw_timer[sw_timer_index].updatetime;
+    else 
+        sw_timer[sw_timer_index].downcounter = updatetime;
+}
+
+void swTimerStop(enum sw_timers_en sw_timer_index)
+{
+    sw_timer[sw_timer_index].enabled = false;
+}
+
+bool swTimerIsActive( enum sw_timers_en sw_timer_index )
+{
+    return sw_timer[sw_timer_index].enabled;
+}
 
 void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value )
 {
@@ -88,12 +118,14 @@ IRAM_ATTR void time_tick500ms() {
     if( digitalRead(RTC_SQW_PIN) ) {
         rtc_SecondsSinceUpdate++;
         for( int i = 0; i < SW_TIMER_MAX; i++ ) {
-            if( sw_timer[i].downcounter ) {
-                sw_timer[i].downcounter--;
-                if( sw_timer[i].downcounter == 0 ) {
-                    sw_timer[i].triggered = true;
-                    if(sw_timer[i].autoupdate) {
-                        sw_timer[i].downcounter = sw_timer[i].updatetime;
+            if( sw_timer[i].enabled ) {
+                if( sw_timer[i].downcounter ) {
+                    sw_timer[i].downcounter--;
+                    if( sw_timer[i].downcounter == 0 ) {
+                        sw_timer[i].triggered = true;
+                        if(sw_timer[i].autoupdate) {
+                            sw_timer[i].downcounter = sw_timer[i].updatetime;
+                        }
                     }
                 }
             }
@@ -113,7 +145,7 @@ void rtc_SetLocalTimeProcessed(void) {
 
 void rtc_Init(void) {
     
-    Serial.println("Init pin interrupt");
+    Serial.println("Init RTC_SQW pin interrupt");
     pinMode(RTC_SQW_PIN, INPUT);
     attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
     Serial.println("Init pin interrupt done");
