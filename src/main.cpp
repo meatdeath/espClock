@@ -263,23 +263,23 @@ void loop() {
         display_intensity(16-intensity);
     }
 
-    // if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
-    //     unsigned long timeinsec;
-    //     Serial.print("Time to collect pressure history: ");
-    //     if(time_sync_with_ntp_enabled) {
-    //         timeinsec = 
-    //             timeClient.getRawEpochTime() + 
-    //             //config.clock.hour_offset*3600 + 
-    //             //config.clock.minute_offset*60 + 
-    //             rtc_SecondsSinceUpdate;
-    //         Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
-    //     } else {
-    //         timeinsec = EPOCH_2000_01_01__12_00_AM + rtc_dt.secondstime() + rtc_SecondsSinceUpdate;
-    //         Serial.printf("Time from rtc module %lu, pressure %3.1f\r\n", timeinsec, pressure);
-    //     }
-    //     eeprom_add_history_item( timeinsec, pressure );
-    //     generate_pressure_history();
-    // }
+    if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
+        unsigned long timeinsec;
+        Serial.print("Time to collect pressure history: ");
+        if(time_sync_with_ntp_enabled) {
+            timeinsec = 
+                timeClient.getRawEpochTime() + 
+                //config.clock.hour_offset*3600 + 
+                //config.clock.minute_offset*60 + 
+                rtc_SecondsSinceUpdate;
+            Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
+        } else {
+            timeinsec = EPOCH_2000_01_01__12_00_AM + rtc_dt.secondstime() + rtc_SecondsSinceUpdate;
+            Serial.printf("Time from rtc module %lu, pressure %3.1f\r\n", timeinsec, pressure);
+        }
+        eeprom_add_history_item( timeinsec, pressure );
+        generate_pressure_history();
+    }
 
     switch(show_display) {
         case DISPLAY_CLOCK:
@@ -319,9 +319,9 @@ void loop() {
             break;
     }
 
-    // if( swTimerIsTriggered(SW_TIMER_SENSOR_UPDATE,true) ) {
-    //     read_bmp_sensor();
-    // }
+    if( swTimerIsTriggered(SW_TIMER_SENSOR_UPDATE,true) ) {
+        read_bmp_sensor();
+    }
 
     if( swTimerIsTriggered(SW_TIMER_SWITCH_DISPLAY,true) ) {
         //Serial.printf("Time to switch display %d\r\n", show_display);

@@ -61,7 +61,7 @@ void display_printpressure(uint16_t pressure) {
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MM].array[i])) );
     }
-    ledMatrix.Rotate90();
+    ledMatrix.ApplyCorrection();
     ledMatrix.commit();
 }
 
@@ -118,7 +118,7 @@ void display_printtemperature(int temperature) {
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_CELCIUS].array[i])) );
     }
-    ledMatrix.Rotate90();
+    ledMatrix.ApplyCorrection();
     ledMatrix.commit();
 
 }
@@ -168,7 +168,7 @@ void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     for( i = 0; i < pgm_read_byte(&(digits[m2].size)); i++ ) {
         ledMatrix.setColumn(26+i, pgm_read_byte(&(digits[m2].array[i])) );
     }
-    ledMatrix.Rotate90();
+    ledMatrix.ApplyCorrection();
     ledMatrix.commit();
 }
 
@@ -176,6 +176,6 @@ void display_printstarting(void) {
     for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
         ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
     }
-    ledMatrix.Rotate90();
+    ledMatrix.ApplyCorrection();
     ledMatrix.commit();
 }
