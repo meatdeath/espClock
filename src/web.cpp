@@ -2,6 +2,7 @@
 #include "config.h"
 #include "rtc.h"
 #include <NTPClient.h>
+#include <AsyncElegantOTA.h>
 
 
 const byte DNS_PORT = 53;
@@ -118,6 +119,7 @@ void launchWeb(int webtype) {
     Serial.println(WiFi.softAPIP());
     createWebServer(webtype);
     // Start the server
+    AsyncElegantOTA.begin(&server);    // Start ElegantOTA
     server.begin();
     Serial.println("Server started"); 
 }

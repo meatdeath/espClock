@@ -6,16 +6,17 @@
 
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
+#include "ESPAsyncWebServer.h"
+#include <ESP8266HTTPClient.h>
+
 #include <WiFiUdp.h>
+#include <Hash.h>
 
 #ifdef ENABLE_DNS
 #include "ESPAsyncUDP.h"
 #include <ESPAsyncDNSServer.h>
 #endif
 
-#include <Hash.h>
-#include "ESPAsyncWebServer.h"
-#include <ESP8266HTTPClient.h>
 
 enum _web_pages_en { 
     WEB_PAGES_NORMAL = 0,
