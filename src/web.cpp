@@ -49,6 +49,7 @@ void wifi_processing(void) {
             Serial.println("Switch to AP mode immediately.");
             time_sync_with_ntp_enabled = false;
             setupAP();
+            WifiState = STATE_WIFI_AP;
         }
         break;
     case STATE_WIFI_CONNECTING:

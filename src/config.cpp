@@ -33,7 +33,7 @@ void config_read(void) {
         ((byte*)&config)[i] = char(EEPROM.read(i));
     }
 
-    if(config.wifi.name[0] == 0 || config.wifi.name[0] == 0xff || strlen(config.wifi.name) == 0 )
+    if(config.wifi.name[0] < 'A' || config.wifi.name[0] > 'z' || strlen(config.wifi.name) == 0 )
     {
         Serial.println("EEPROM doesn't contain WiFi connection information.");
         config.wifi.valid = false;
