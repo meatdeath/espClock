@@ -27,6 +27,7 @@ extern String html_PressureHistory;
 extern String pressureLabelsStr;
 extern String pressureValuesStr;
 
+void web_init(void);
 bool testWifi(void);
 void launchWeb(int webtype);
 void setupAP(void);

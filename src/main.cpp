@@ -176,6 +176,8 @@ void setup() {
     eeprom_restore_pressure_history(time);
 
     time_sync_with_ntp_enabled = false;
+
+    web_init();
 }
 
 //-----------------------------------------------------------------------------------------------------------

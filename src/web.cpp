@@ -4,7 +4,12 @@
 #include <NTPClient.h>
 #include <AsyncElegantOTA.h>
 
+//#define MDNS_ENABLE
+
+#ifdef MDNS_ENABLE
 #include <ESP8266mDNS.h>        // Include the mDNS library
+#endif // MDNS_ENABLE
+
 #include <LittleFS.h>
 
 extern String dbg_text;
@@ -13,7 +18,7 @@ const byte DNS_PORT = 53;
 extern volatile bool softreset;
 
 IPAddress apIP(192,168,1,1);
-IPAddress gateway(192,168,1,9);
+IPAddress gateway(0,0,0,0);
 IPAddress subnet(255,255,255,0);
 
 
@@ -43,6 +48,20 @@ void web_init(void) {
         Serial.println("An Error has occurred while mounting LittleFS");
         return;
     }
+    Serial.println("Check filesystem...");
+    File file = LittleFS.open("/index-ap.html", "r");
+    if(!file){
+        Serial.println("Failed to open file \"index-ap.html\" for reading");
+        file.close();
+        return;
+    }
+    if(!file.available()){
+        Serial.println("Failed to read file \"index-ap.html\"");
+        file.close();
+        return;
+    }
+    file.close();
+    Serial.println("Filesystem OK");
 }
 
 void wifi_processing(void) {
@@ -72,10 +91,12 @@ void wifi_processing(void) {
     case STATE_WIFI_CONNECTING:
         if (WiFi.status() == WL_CONNECTED) { 
             Serial.println("WiFi connected");
+#ifdef MDNS_ENABLE
             if (!MDNS.begin("espclock")) {             // Start the mDNS responder for espclock.local
                 Serial.println("Error setting up MDNS responder!");
             }
             Serial.println("mDNS responder started");
+#endif // MDNS_ENABLE
             swTimerStop(SW_TIMER_WIFI_CONNECTING);
             WifiState = STATE_WIFI_CONNECTED;
             launchWeb(WEB_PAGES_NORMAL);
@@ -159,7 +180,7 @@ ap_desc_t ap_list[AP_LIST_MAX];
 
 void setupAP(void) {
     WiFi.mode(WIFI_AP);
-    WiFi.disconnect();
+    //WiFi.disconnect();
     delay(100);
     ap_list_num = 0;
     int ap_list_num = WiFi.scanNetworks();
@@ -195,17 +216,20 @@ void setupAP(void) {
     Serial.printf("Setting soft-AP \"%s\": ", ssid);
     Serial.println(WiFi.softAP(ssid, passphrase) ? "Done" : "Failed!");
 
+    WiFi.config(apIP, gateway, subnet);
+
     Serial.print("Soft-AP IP address: ");
     Serial.println(WiFi.softAPIP());
 
-    WiFi.config(0, 0, 0);
-
+#ifdef MDNS_ENABLE
     if (!MDNS.begin("espclock")) {             // Start the mDNS responder for esp8266.local
         Serial.println("Error setting up MDNS responder!");
     }
     Serial.println("mDNS responder started");
+#endif // MDNS_ENABLE
     // WiFi.softAP(ssid, passphrase, 6);
     // Serial.println("softap");
+    delay(200);
     launchWeb(WEB_PAGES_FOR_AP);
     Serial.println("over");
 }
@@ -309,262 +333,274 @@ void createWebServer(int webtype)
     {
         Serial.print("Creating AP server ...");
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+            Serial.println("Accessing root page...");
+            //request->send(LittleFS, "/index-ap.html", "text/html");
             request->send(LittleFS, "/index-ap.html", "text/html", false, processor);
-            //request->send_P(200, "text/html", content.c_str());  
-        });
-        Serial.print(".");
-        server.on("/setting", HTTP_GET, [](AsyncWebServerRequest *request) {
-            if(!request->hasParam("ssid")) return;
-            if(!request->hasParam("pass")) return;
-            if(!request->hasParam("auth-username")) return;
-            if(!request->hasParam("auth-password")) return;
-            // String qsid = server.arg("ssid");
-            // String qpass = server.arg("pass");
-            AsyncWebParameter* p = request->getParam(0);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "ssid") return;
-            String qsid = p->value();
-            
-            p = request->getParam(1);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "pass") return;
-            String qpass = p->value();
-            
-            p = request->getParam(2);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "auth-username") return;
-            String auth_username = p->value();
-            
-            p = request->getParam(3);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "auth-password") return;
-            String auth_password = p->value();
-
-            if ( qsid.length() > 0 ) 
-            {
-                config_set(&qsid, &qpass, &auth_username, &auth_password);
-                content = "{\"Success\":\"saved to eeprom... reset to boot into new wifi\"}";
-                statusCode = 200;
-                softreset = true;
-            } 
-            else 
-            {
-                content = "{\"Error\":\"404 not found\"}";
-                statusCode = 404;
-                Serial.println("Sending 404");
-            }
-            request->send_P(statusCode, "application/json", content.c_str());
-        });
-        Serial.print(".");
-        server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
-            Serial.println("Set time_offset----------------------------------------");
-
-            Serial.println("debug 0");
-
-            int param_n = request->params();
-            
-            Serial.print("param N=");
-            Serial.println(param_n);
-            if(param_n == 0) {
-                request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
-                return;
-            }
-
-            AsyncWebParameter* p = request->getParam(0);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
-
-            Serial.print("Param value: ");
-            Serial.println(p->value());
-
-            long p_value = p->value().toInt();
-
-            Serial.print("Intager value");
-            Serial.println(p_value);
-
-            if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
-                return;
-            }
-            Serial.println("----------------------------------------");
-            int8_t hour_offset = p_value;
-            // EEPROM.write(96, 0);
-            // delay(100);
-            Serial.print("Set hour offset: ");
-            Serial.println(hour_offset);
-
-            //------------------------------------
-
-            p = request->getParam(1);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
-
-            Serial.print("Param value: ");
-            Serial.println(p->value());
-
-            p_value = p->value().toInt();
-
-            Serial.print("Intager value");
-            Serial.println(p_value);
-
-            if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
-                return;
-            }
-            Serial.println("----------------------------------------");
-            int8_t minutes_offset = p_value;
-            // EEPROM.write(96, 0);
-            // delay(100);
-            Serial.print("Set minutes offset: ");
-            Serial.println(minutes_offset);
-            config_settimeoffset(hour_offset, minutes_offset);
-            request->send_P(200, "text/plain", "OK");
-        });
-        Serial.print(".");
-        server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
-            content = "<!DOCTYPE HTML>\r\n<html>";
-            content += "<p>Clear WiFi settings done.</p><p>The board will automatically restart after 10s... After restart you can connect to AP '";
-            content += ssid;
-            content += "' and open configuration page by address '";
-            content += apIP.toString();
-            content += "'.</p></html>";
-            request->send_P(200, "text/html", content.c_str());
-            config_clearwifi();
-            softreset = true;
-        });
-        Serial.print(".");
-        server.on("/clear_logs", HTTP_GET, [](AsyncWebServerRequest *request) {
-                clear_log();
-                content = 
-                    "<html>"
-                        "<head>"
-                            "<meta http-equiv='refresh' content='3;url=espclock.local' />"
-                        "</head>"
-                        "<body>"
-                            "<h1>EspClock</h1>"
-                            "<p>Log cleaned. Redirecting in 3 seconds...</p>"
-                        "</body>"
-                    "</html>";
-                statusCode = 200;
-            //request->send_P(statusCode, "application/json", content.c_str());
-
-            request->send_P(200, "text/html", content.c_str());
-        });
-    } 
-    else if (webtype == WEB_PAGES_NORMAL) 
-    {
-        Serial.print("Creating Device server ...");
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-            if( !request->authenticate(http_username,http_password) )
-                return request->requestAuthentication();
-            request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
         });
         Serial.print(".");
         server.onNotFound([](AsyncWebServerRequest *request) {
+            //request->send_P(404,"text/plain", "");
+            Serial.println("Handle not found page...");
             handleWebRequests(request);
         }); // Set server all paths are not found so we can handle as per URI
 
-        Serial.print(".");
-        server.on("/readPressure", HTTP_GET, [](AsyncWebServerRequest *request){
-            if( !request->authenticate(http_username,http_password) )
-                return request->requestAuthentication();
-            char pressure_str[10];
-            sprintf(pressure_str, "%3.1f", pressure);
-            request->send_P(200, "text/plain", pressure_str);
-        });
-        Serial.print(".");
-        server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
-            if( !request->authenticate(http_username,http_password) )
-                return request->requestAuthentication();
-            Serial.println("Set time_offset----------------------------------------");
+        // server.on("/setting", HTTP_GET, [](AsyncWebServerRequest *request) {
+        //     Serial.println("Setup wifi");
+        //     if(!request->hasParam("ssid")) return;
+        //     if(!request->hasParam("pass")) return;
+        //     if(!request->hasParam("auth-username")) return;
+        //     if(!request->hasParam("auth-password")) return;
+        //     // String qsid = server.arg("ssid");
+        //     // String qpass = server.arg("pass");
+        //     AsyncWebParameter* p = request->getParam(0);
+        //     Serial.print(p->name());
+        //     Serial.print(" : ");
+        //     Serial.println(p->value());
 
-            Serial.println("debug 0");
-
-            int param_n = request->params();
+        //     if(p->name() != "ssid") return;
+        //     String qsid = p->value();
             
-            Serial.print("param N=");
-            Serial.println(param_n);
-            if(param_n == 0) {
-                request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
-                return;
-            }
+        //     p = request->getParam(1);
+        //     Serial.print(p->name());
+        //     Serial.print(" : ");
+        //     Serial.println(p->value());
 
-            AsyncWebParameter* p = request->getParam(0);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
+        //     if(p->name() != "pass") return;
+        //     String qpass = p->value();
+            
+        //     p = request->getParam(2);
+        //     Serial.print(p->name());
+        //     Serial.print(" : ");
+        //     Serial.println(p->value());
 
-            Serial.print("Param value: ");
-            Serial.println(p->value());
+        //     if(p->name() != "auth-username") return;
+        //     String auth_username = p->value();
+            
+        //     p = request->getParam(3);
+        //     Serial.print(p->name());
+        //     Serial.print(" : ");
+        //     Serial.println(p->value());
 
-            long p_value = p->value().toInt();
+        //     if(p->name() != "auth-password") return;
+        //     String auth_password = p->value();
 
-            Serial.print("Intager value");
-            Serial.println(p_value);
+        //     if ( qsid.length() > 0 ) 
+        //     {
+        //         config_set(&qsid, &qpass, &auth_username, &auth_password);
+        //         content = "{\"Success\":\"saved to eeprom... reset to boot into new wifi\"}";
+        //         statusCode = 200;
+        //         softreset = true;
+        //     } 
+        //     else 
+        //     {
+        //         content = "{\"Error\":\"404 not found\"}";
+        //         statusCode = 404;
+        //         Serial.println("Sending 404");
+        //     }
+        //     request->send_P(statusCode, "application/json", content.c_str());
+        // });
+        // Serial.print(".");
+        // server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
+        //     Serial.println("Set time_offset----------------------------------------");
 
-            if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
-                return;
-            }
-            Serial.println("----------------------------------------");
-            int8_t hour_offset = p_value;
-            // EEPROM.write(96, 0);
-            // delay(100);
-            Serial.print("Set hour offset: ");
-            Serial.println(hour_offset);
+        //     Serial.println("debug 0");
 
-            //------------------------------------
+        //     int param_n = request->params();
+            
+        //     Serial.print("param N=");
+        //     Serial.println(param_n);
+        //     if(param_n == 0) {
+        //         request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
+        //         return;
+        //     }
 
-            p = request->getParam(1);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
+        //     AsyncWebParameter* p = request->getParam(0);
+        //     Serial.print("Param name: ");
+        //     Serial.println(p->name());
 
-            Serial.print("Param value: ");
-            Serial.println(p->value());
+        //     Serial.print("Param value: ");
+        //     Serial.println(p->value());
 
-            p_value = p->value().toInt();
+        //     long p_value = p->value().toInt();
 
-            Serial.print("Intager value");
-            Serial.println(p_value);
+        //     Serial.print("Intager value");
+        //     Serial.println(p_value);
 
-            if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
-                return;
-            }
-            Serial.println("----------------------------------------");
-            int8_t minutes_offset = p_value;
-            // EEPROM.write(96, 0);
-            // delay(100);
-            Serial.print("Set minutes offset: ");
-            Serial.println(minutes_offset);
-            config_settimeoffset(hour_offset, minutes_offset);
-            request->send_P(200, "text/plain", "OK");
-        });
-        Serial.print(".");
-        server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
-            if( !request->authenticate(http_username,http_password) )
-                return request->requestAuthentication();
-            content = "<!DOCTYPE HTML>\r\n<html>";
-            content += "<p>Clear WiFi settings done.</p><p>The board will automatically restart after 10s... After restart you can connect to AP '";
-            content += ssid;
-            content += "' and open configuration page by address '";
-            content += apIP.toString();
-            content += "'.</p></html>";
-            request->send_P(200, "text/html", content.c_str());
-            config_clearwifi();
-            softreset = true;
-        });
-    }
+        //     if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
+        //         request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
+        //         return;
+        //     }
+        //     Serial.println("----------------------------------------");
+        //     int8_t hour_offset = p_value;
+        //     // EEPROM.write(96, 0);
+        //     // delay(100);
+        //     Serial.print("Set hour offset: ");
+        //     Serial.println(hour_offset);
+
+        //     //------------------------------------
+
+        //     p = request->getParam(1);
+        //     Serial.print("Param name: ");
+        //     Serial.println(p->name());
+
+        //     Serial.print("Param value: ");
+        //     Serial.println(p->value());
+
+        //     p_value = p->value().toInt();
+
+        //     Serial.print("Intager value");
+        //     Serial.println(p_value);
+
+        //     if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
+        //         request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
+        //         return;
+        //     }
+        //     Serial.println("----------------------------------------");
+        //     int8_t minutes_offset = p_value;
+        //     // EEPROM.write(96, 0);
+        //     // delay(100);
+        //     Serial.print("Set minutes offset: ");
+        //     Serial.println(minutes_offset);
+        //     config_settimeoffset(hour_offset, minutes_offset);
+        //     request->send_P(200, "text/plain", "OK");
+        // });
+        // Serial.print(".");
+        // server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+        //     Serial.println("Clear wifi settings");
+        //     content = "<!DOCTYPE HTML>\r\n<html>";
+        //     content += "<p>Clear WiFi settings done.</p><p>The board will automatically restart after 10s... After restart you can connect to AP '";
+        //     content += ssid;
+        //     content += "' and open configuration page by address '";
+        //     content += apIP.toString();
+        //     content += "'.</p></html>";
+        //     request->send_P(200, "text/html", content.c_str());
+        //     config_clearwifi();
+        //     softreset = true;
+        // });
+        // Serial.print(".");
+        // server.on("/clear_logs", HTTP_GET, [](AsyncWebServerRequest *request) {
+        //     Serial.print("Clear logs ... ");
+        //         clear_log();
+        //     Serial.println("done");
+        //         content = 
+        //             "<html>"
+        //                 "<head>"
+        //                     "<meta http-equiv='refresh' content='3;url=espclock.local' />"
+        //                 "</head>"
+        //                 "<body>"
+        //                     "<h1>EspClock</h1>"
+        //                     "<p>Log cleaned. Redirecting in 3 seconds...</p>"
+        //                 "</body>"
+        //             "</html>";
+        //         statusCode = 200;
+        //     //request->send_P(statusCode, "application/json", content.c_str());
+
+        //     request->send_P(200, "text/html", content.c_str());
+        // });
+    } 
+    // else if (webtype == WEB_PAGES_NORMAL) 
+    // {
+    //     Serial.print("Creating Device server ...");
+    //     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //         if( !request->authenticate(http_username,http_password) )
+    //             return request->requestAuthentication();
+    //         request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
+    //     });
+    //     Serial.print(".");
+    //     server.onNotFound([](AsyncWebServerRequest *request) {
+    //         //request->send_P(404,"text/plain", "");
+    //         handleWebRequests(request);
+    //     }); // Set server all paths are not found so we can handle as per URI
+
+    //     Serial.print(".");
+    //     server.on("/readPressure", HTTP_GET, [](AsyncWebServerRequest *request){
+    //         if( !request->authenticate(http_username,http_password) )
+    //             return request->requestAuthentication();
+    //         char pressure_str[10];
+    //         sprintf(pressure_str, "%3.1f", pressure);
+    //         request->send_P(200, "text/plain", pressure_str);
+    //     });
+    //     Serial.print(".");
+    //     server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
+    //         if( !request->authenticate(http_username,http_password) )
+    //             return request->requestAuthentication();
+    //         Serial.println("Set time_offset----------------------------------------");
+
+    //         Serial.println("debug 0");
+
+    //         int param_n = request->params();
+            
+    //         Serial.print("param N=");
+    //         Serial.println(param_n);
+    //         if(param_n == 0) {
+    //             request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
+    //             return;
+    //         }
+
+    //         AsyncWebParameter* p = request->getParam(0);
+    //         Serial.print("Param name: ");
+    //         Serial.println(p->name());
+
+    //         Serial.print("Param value: ");
+    //         Serial.println(p->value());
+
+    //         long p_value = p->value().toInt();
+
+    //         Serial.print("Intager value");
+    //         Serial.println(p_value);
+
+    //         if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
+    //             request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
+    //             return;
+    //         }
+    //         Serial.println("----------------------------------------");
+    //         int8_t hour_offset = p_value;
+    //         // EEPROM.write(96, 0);
+    //         // delay(100);
+    //         Serial.print("Set hour offset: ");
+    //         Serial.println(hour_offset);
+
+    //         //------------------------------------
+
+    //         p = request->getParam(1);
+    //         Serial.print("Param name: ");
+    //         Serial.println(p->name());
+
+    //         Serial.print("Param value: ");
+    //         Serial.println(p->value());
+
+    //         p_value = p->value().toInt();
+
+    //         Serial.print("Intager value");
+    //         Serial.println(p_value);
+
+    //         if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
+    //             request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
+    //             return;
+    //         }
+    //         Serial.println("----------------------------------------");
+    //         int8_t minutes_offset = p_value;
+    //         // EEPROM.write(96, 0);
+    //         // delay(100);
+    //         Serial.print("Set minutes offset: ");
+    //         Serial.println(minutes_offset);
+    //         config_settimeoffset(hour_offset, minutes_offset);
+    //         request->send_P(200, "text/plain", "OK");
+    //     });
+    //     Serial.print(".");
+    //     server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //         if( !request->authenticate(http_username,http_password) )
+    //             return request->requestAuthentication();
+    //         content = "<!DOCTYPE HTML>\r\n<html>";
+    //         content += "<p>Clear WiFi settings done.</p><p>The board will automatically restart after 10s... After restart you can connect to AP '";
+    //         content += ssid;
+    //         content += "' and open configuration page by address '";
+    //         content += apIP.toString();
+    //         content += "'.</p></html>";
+    //         request->send_P(200, "text/html", content.c_str());
+    //         config_clearwifi();
+    //         softreset = true;
+    //     });
+    // }
     Serial.println(" done");
 }

@@ -150,7 +150,7 @@ void rtc_Init(void) {
     attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
     Serial.println("Init pin interrupt done");
 
-    delay(3000); // wait for console opening
+    //delay(3000); // wait for console opening
  
     if (! rtc.begin()) {
         Serial.println("Couldn't find RTC");

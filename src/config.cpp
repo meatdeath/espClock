@@ -87,8 +87,8 @@ void config_set(String *wifi_name, String *wifi_password, String *auth_username,
 void config_clearwifi(void) {
     Serial.print("Clearing wifi settings... ");
     
-    memset( config.wifi.name, 0, sizeof(config.wifi.name) );
-    memset( config.wifi.password, 0, sizeof(config.wifi.password) );
+    memset( config.wifi.name, 0xff, sizeof(config.wifi.name) );
+    memset( config.wifi.password, 0xff, sizeof(config.wifi.password) );
     
     config_writeeeprom();
     Serial.println("Done");
