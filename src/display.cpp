@@ -1,6 +1,20 @@
 #include "display.h"
 
+// ----------------------------------------------------------------------------
+typedef enum display_orientation_en {
+    DISPLAY_ORIENTATION_0 = 0,
+    DISPLAY_ORIENTATION_CW90,
+    DISPLAY_ORIENTATION_CW180,
+    DISPLAY_ORIENTATION_CCW90
+} display_orientation_t;
+
+// ----------------------------------------------------------------------------
+
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
+
+display_orientation_t display_orientation = DISPLAY_ORIENTATION_CCW90;
+
+// ----------------------------------------------------------------------------
 
 void display_init(void) {
     ledMatrix.init();
@@ -10,6 +24,14 @@ void display_init(void) {
 
 void display_intensity(byte intensity) {
     ledMatrix.setIntensity(intensity);
+}
+
+void display_fix_rotation(display_orientation_t orientation) {
+    switch(orientation) {
+        case DISPLAY_ORIENTATION_CW90: ledMatrix.Rotate90(); break;
+        case DISPLAY_ORIENTATION_CW180: ledMatrix.Rotate90(); ledMatrix.Rotate90(); break;
+        case DISPLAY_ORIENTATION_CCW90: ledMatrix.Rotate90(); ledMatrix.Rotate90(); ledMatrix.Rotate90(); break;
+    }
 }
 
 void display_brightness(uint8_t percentage) {
@@ -61,7 +83,7 @@ void display_printpressure(uint16_t pressure) {
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_MM].array[i])) );
     }
-    ledMatrix.Rotate90();
+    display_fix_rotation(display_orientation);
     ledMatrix.commit();
 }
 
@@ -118,7 +140,7 @@ void display_printtemperature(int temperature) {
     for( i = 0; i < size; i++ ) {
         ledMatrix.setColumn(offset+i, pgm_read_byte(&(digits[DISPLAY_CELCIUS].array[i])) );
     }
-    ledMatrix.Rotate90();
+    display_fix_rotation(display_orientation);
     ledMatrix.commit();
 
 }
@@ -168,7 +190,7 @@ void display_printtime(byte hours, byte minutes, byte seconds, byte format) {
     for( i = 0; i < pgm_read_byte(&(digits[m2].size)); i++ ) {
         ledMatrix.setColumn(26+i, pgm_read_byte(&(digits[m2].array[i])) );
     }
-    ledMatrix.Rotate90();
+    display_fix_rotation(display_orientation);
     ledMatrix.commit();
 }
 
@@ -176,6 +198,6 @@ void display_printstarting(void) {
     for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
         ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
     }
-    ledMatrix.Rotate90();
+    display_fix_rotation(display_orientation);
     ledMatrix.commit();
 }
