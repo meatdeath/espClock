@@ -13,6 +13,9 @@ void rtc_SetEpoch(uint32_t epoch_time);
 bool rtc_LocalTimeRequireProcessing(void);
 void rtc_SetLocalTimeProcessed(void);
 
+#define RTC_SECONDS_2000_01_01   946684800L
+#define COLLECT_PRESSURE_HISTORY_PERIOD 60 //60*120// add point to pressure history period = 2h
+
 enum sw_timers_en {
     SW_TIMER_SENSOR_UPDATE = 0,
     SW_TIMER_RTC_MODULE_UPDATE,
@@ -24,11 +27,17 @@ enum sw_timers_en {
     SW_TIMER_MAX
 };
 
+typedef enum sw_timer_precision_en {
+    SW_TIMER_PRECISION_S = 0,
+    SW_TIMER_PRECISION_MS
+} sw_timer_precision_t;
+
 typedef struct soft_timer_st {
     bool triggered;
     bool autoupdate;
     uint16_t updatetime;
     uint16_t downcounter;
+    sw_timer_precision_t precision;
 } soft_timer_t;
 void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value );
 bool swTimerIsTriggered( enum sw_timers_en sw_timer, bool autoreset );

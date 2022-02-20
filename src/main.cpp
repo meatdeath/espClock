@@ -9,6 +9,7 @@
 #include "config.h"
 #include "rtc.h"
 #include "web.h"
+#include "pressure_history.h"
 
 #include <NTPClient.h>
 #include <extEEPROM.h>
@@ -28,12 +29,6 @@ bool bmp_sensor_present = false;
 float temperature = 0;
 float pressure = 0;
 float altitude = 0;
-
-#define PRESSURE_HISTORY_SIZE   96
-float pressure_history[PRESSURE_HISTORY_SIZE] = {0}; // 2 days every 30min
-uint16_t pressure_history_size = 0;
-uint16_t pressure_history_start = 0;
-uint16_t pressure_history_end = 0;
 
 const int analogInPin = A0;  // ESP8266 Analog Pin ADC0 = A0
 
@@ -57,13 +52,41 @@ void setup() {
     Serial.println();
     Serial.println();
     Serial.println("Startup");
+    delay(1000);
 
     //-----------
 
-    config_init();
+    Serial.println("Init EEPROM...");
+    eepStatus = eeprom.begin(eeprom.twiClock400kHz);
+    if (eepStatus) {
+        Serial.print(F("extEEPROM.begin() failed, status = "));
+        Serial.println(eepStatus);
+        while (1);
+    }
+
+    // Serial.println("Start eeprom check...");
+
+    // uint8_t bytes[5] = {0x00, 0x55, 0xAA, 0x3C, 0xFF};
+    // uint8_t testStatus = 0;
+    // for( uint8_t j = 0; j < 5; j++) {
+    //     Serial.printf("Test with 0x%02x...\r\n", bytes[j]);
+    //     for( uint16_t i = 0; i < (sizeof(config_t)+PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++ ) {
+    //         eepStatus = eeprom.write(i, bytes[j]);
+    //     }
+    //     for( uint16_t i = 0; i < (sizeof(config_t)+PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++ ) {
+    //         if( bytes[j] != eeprom.read(i) ) {
+    //             Serial.printf("Failure on address 0x%04x data 0x%02x\r\n", i, bytes[j]);
+    //             testStatus++;
+    //         }
+    //     }
+    // }
+
+    // Serial.print("EEPROM check ");
+    // if (testStatus) Serial.println("FAILED");
+    // else Serial.println("SUCCESS");
 
     // Init led display
-    Serial.println("Init MAX7219");
+    Serial.println("Init MAX7219...");
     display_init();
     display_brightness(20);
 
@@ -71,13 +94,10 @@ void setup() {
     display_printstarting();
 
     // load config
-    config_read();
+    config_init();
 
-    Serial.printf("Time offset... %d hours %02d minute(s)\r\n", config.clock.hour_offset, config.clock.minute_offset);
-    if( config.clock.hour_offset > 12 || config.clock.hour_offset < -12 || config.clock.minute_offset < 0 || config.clock.minute_offset > 59 ) {
-        // Reset time offset if invalid
-        config_settimeoffset(0, 0);
-    }
+    Serial.printf("Time offset... %d hours %02d minute(s)\r\n", config_clock.hour_offset, config_clock.minute_offset);
+
     rtc_Init();
 
     rtc_GetDT( &rtc_dt );
@@ -118,18 +138,15 @@ void setup() {
 
     WifiState = STATE_WIFI_IDLE;
 
-    eepStatus = eeprom.begin(eeprom.twiClock400kHz);
-    if (eepStatus) {
-        Serial.print(F("extEEPROM.begin() failed, status = "));
-        Serial.println(eepStatus);
-        while (1);
-        // eeprom.write(addr, *data);
-        // eeprom.write(addr, data, len);
-        // *data = eeprom.read(addr);
-        // eeprom.read(addr, data, len);
-    }
-
     time_sync_with_ntp_enabled = false;
+
+    Serial.println("Restore history...");
+    unsigned long time;
+    time = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
+    Serial.printf("GMT time synched with RTC module: %lu\r\n", time);
+    eeprom_restore_pressure_history(time);
+
+    web_init();
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -144,9 +161,12 @@ uint8_t last_shown_display = DISPLAY_CLOCK;
 uint8_t intensity = 15;
 uint8_t measured_intensity = 1;
 
+#include "ESP8266mDNS.h"
+
 void loop() {
     int ambianceValue = 0;  // value abiance read from the port
     wifi_processing();
+    MDNS.update();
 
     if(softreset==true) {
         Serial.println("The board will reset in 10s ");
@@ -194,8 +214,8 @@ void loop() {
         } else if (ambianceValue > lower_light ) {
             measured_intensity = ((double)(ambianceValue-lower_light)/(higher_light-lower_light))*15 + 1;
         }
-        Serial.printf("ambiance : %d\r\n", ambianceValue);
-        Serial.printf("lightness : %d\r\n", 16-measured_intensity);
+        // Serial.printf("ambiance : %d\r\n", ambianceValue);
+        // Serial.printf("lightness : %d\r\n", 16-measured_intensity);
     }
     if( intensity != measured_intensity ) {
         if( intensity > measured_intensity ) {
@@ -207,53 +227,22 @@ void loop() {
     }
 
     if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
-        pressure_history[pressure_history_end++] = pressure;
-        if( pressure_history_end == PRESSURE_HISTORY_SIZE )
-            pressure_history_end = 0;
-        if( pressure_history_end == pressure_history_start)
-        {
-            pressure_history_start++;
-            if( pressure_history_start == PRESSURE_HISTORY_SIZE )
-                pressure_history_start = 0;
+        unsigned long timeinsec;
+        Serial.print("Time to collect pressure history: ");
+        if(time_sync_with_ntp_enabled) {
+            timeinsec = 
+                timeClient.getRawEpochTime() + 
+                //config.clock.hour_offset*3600 + 
+                //config.clock.minute_offset*60 + 
+                rtc_SecondsSinceUpdate;
+            Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
+        } else {
+            timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
+            Serial.printf("Time from rtc module %lu, pressure %3.1f\r\n", timeinsec, pressure);
         }
-        else
-        {
-            pressure_history_size++;
-        }
-        pressureLabelsStr = "";
-        pressureValuesStr = "";
-        Serial.println("----- Pressure history -----");
-        html_PressureHistory = "<table><tr><td>Time ago</td><td>Pressure, mm</td></tr>";
-        uint16_t time = pressure_history_size-1;
-        for(uint16_t i = pressure_history_start; i != pressure_history_end; )
-        {
-            html_PressureHistory += "<tr><td>";
-            pressureLabelsStr += "\"";
-            html_PressureHistory += time*2;
-            html_PressureHistory += "h";
-            if((time&1) == 0) {
-                pressureLabelsStr += time*2;
-                pressureLabelsStr += "h";
-            }
-            pressureLabelsStr += "\"";
-            html_PressureHistory += "</td><td>";
-
-            pressureValuesStr += pressure_history[i];
-            html_PressureHistory += pressure_history[i];
-            html_PressureHistory += "</td></tr>";
-
-            Serial.println(pressure_history[i]);
-            i++;
-            if( i == PRESSURE_HISTORY_SIZE )
-                i = 0; 
-            if( time ) {
-                pressureLabelsStr += ",";
-                pressureValuesStr += ",";
-            }
-            time--;
-        }
-        html_PressureHistory += "</table>";
-        Serial.println("----------------------------");
+        eeprom_add_history_item( timeinsec, pressure );
+        generate_pressure_history();
+       
     }
 
     switch(show_display) {
@@ -264,15 +253,15 @@ void loop() {
                 int8_t minutes = 0;
                 //int8_t seconds = 0;
                 if(time_sync_with_ntp_enabled) {
-                    unsigned long time = timeClient.getRawEpochTime() + config.clock.hour_offset*3600 + config.clock.minute_offset*60 + rtc_SecondsSinceUpdate;
+                    unsigned long time = timeClient.getRawEpochTime() + config_clock.hour_offset*3600 + config_clock.minute_offset*60 + rtc_SecondsSinceUpdate;
                     hours = (time % 86400L) / 3600;
                     minutes = (time % 3600) / 60;
                     //seconds = time % 60;
                 } else {
                     DateTime dt = rtc_dt + 
                         TimeSpan( rtc_SecondsSinceUpdate/(3600*24), 
-                                    config.clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, 
-                                    config.clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, 
+                                    config_clock.hour_offset + (rtc_SecondsSinceUpdate/3600)%24, 
+                                    config_clock.minute_offset + (rtc_SecondsSinceUpdate/60)%60, 
                                     rtc_SecondsSinceUpdate%60 );
                     hours = dt.hour();
                     minutes = dt.minute();

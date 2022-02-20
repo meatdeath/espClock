@@ -16,7 +16,7 @@ volatile bool local_time_updated = false;
 
 
 #define DEFAULT_SENSOR_UPDATE_TIME  60 // in seconds (max 255)
-#define COLLECT_PRESSURE_HISTORY_PERIOD 60*120//60*30   // add point to pressure history period = 30min
+//#define COLLECT_PRESSURE_HISTORY_PERIOD 60*120//60*30   // add point to pressure history period = 30min
 
 
 uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
@@ -26,43 +26,50 @@ volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
         .triggered = false,
         .autoupdate = true,
         .updatetime = sensor_update_time,
-        .downcounter = sensor_update_time
+        .downcounter = sensor_update_time,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_GET_TIME_FROM_RTC_MODULE
         .triggered = true,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
-        .downcounter = 10
+        .downcounter = 10,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_RTC_MODULE_UPDATE,
         .triggered = false,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
-        .downcounter = 60
+        .downcounter = 60,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_NTP_TIME_UPDATE,
         .triggered = true,
         .autoupdate = true,
         .updatetime = 60, // each 1 min
-        .downcounter = 30
+        .downcounter = 30,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_SWITCH_DISPLAY
         .triggered = false,
         .autoupdate = true,
         .updatetime = CLOCK_SHOW_TIME,
-        .downcounter = CLOCK_SHOW_TIME
+        .downcounter = CLOCK_SHOW_TIME,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_COLLECT_PRESSURE_HISTORY
         .triggered = true,
         .autoupdate = true,
         .updatetime = COLLECT_PRESSURE_HISTORY_PERIOD,
-        .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD
+        .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD,
+        .precision = SW_TIMER_PRECISION_S
     },
     {   // SW_TIMER_GET_AMBIANCE
         .triggered = true,
         .autoupdate = true,
         .updatetime = 1,
-        .downcounter = 1
+        .downcounter = 1,
+        .precision = SW_TIMER_PRECISION_MS
     }
 };
 

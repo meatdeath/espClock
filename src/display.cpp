@@ -28,6 +28,7 @@ void display_intensity(byte intensity) {
 
 void display_fix_rotation(display_orientation_t orientation) {
     switch(orientation) {
+        case DISPLAY_ORIENTATION_0: break;
         case DISPLAY_ORIENTATION_CW90: ledMatrix.Rotate90(); break;
         case DISPLAY_ORIENTATION_CW180: ledMatrix.Rotate90(); ledMatrix.Rotate90(); break;
         case DISPLAY_ORIENTATION_CCW90: ledMatrix.Rotate90(); ledMatrix.Rotate90(); ledMatrix.Rotate90(); break;

@@ -1,0 +1,79 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script src="script-ap.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    </head>
+    <body>
+        <div id="page">
+            <h1>ESPClock</h1>
+            <h3>Time correction</h3>
+
+            <p class='time_offset_section'>
+                <label for='hour_offset'>Hours</label>
+                <input type='number' id='hour_offset' name='hour_offset' value='%HOURS_OFFSET%' min='-12' max='12'>
+            </p>
+            <p class='time_offset_section'>
+                <label for='minutes_offset'>Minutes</label>
+                <input type='number' id='minutes_offset' name='minutes_offset' value='%MINUTES_OFFSET%' min='0' max='59'>
+            </p>
+            <p class='time_offset_section'>
+                <button onclick='setOffset(this);'>Update time offset</button>
+            </p>
+
+            <p>Time: <span id='utc-time-string'>--/--/-- --:--:--</span></p>
+            <p>Time offset: <span id='time-offset-string'>--/--/-- --:--:--</span></p>
+            <p>Corrected Time: <span id='corrected-time-string'>--/--/-- --:--:--</span></p>
+
+            <h3>Sensor data</h3>
+
+            <p>Temperature: <span id="temperature-text">%TEMPERATURE%</span>&#8451;</p>
+            <p>Pressure: <span id="pressure-text">%PRESSURE%</span>mm</p>
+
+            <table>
+                <tr>
+                    <th>Time</th>
+                    <th>Pressure</th>
+                </tr>
+                %PRESSURE_HISTORY_TABLE%
+            </table>
+
+            <p><button onclick="window.location.href='/clear_logs'">Clear logs</button></p>
+
+            <h3>Network settings</h3>
+
+            <form method='get' action='setting'>
+                <p style='margin:0 0 5px 0'>Choose a network to connect</p>
+                <table>
+                    <tr>
+                        <th></th>
+                        <th style="min-width: 50px">SSID</th>
+                        <th style="min-width: 50px">Signal straight</th>
+                        <th>Protection</th>
+                    </tr>
+                    %AP_LIST%
+                </table>
+                <br>
+                <p>
+                    <label for='pass'>Password</label>
+                    <input name='pass' type='password' length=64>
+                </p>
+                <hr>
+                <p>Authentication</p>
+                <p class='auth-field'>
+                    <label for='auth-username'>Username</label>
+                    <input type='text' id='auth-username' name='auth-username'>
+                </p>
+                <p class='auth-field'>
+                    <label for='auth-pass'>Password</label>
+                    <input type='password' id='auth-pass' name='auth-pass'>
+                </p>
+                <br>
+                <button type='submit' class='btn btn-primary'>Save Network Settings</button>
+                <button class="btn btn-primary" onclick="window.location.href='/reset_network'">Clear Network Settings</button>
+            </form>
+            <hr>
+            <p>IP address: %IP_ADDRESS%</p>
+        </div>
+    </body>
+</html>

@@ -11,10 +11,12 @@
 
 //#define HIDE_HOUR_LEADING_ZERO
 
+#pragma pack(push,1)
 typedef struct _digits_st {
     byte array[32];
     byte size;
 } digits_t;
+#pragma pack(pop)
 
 // const digits_t digits [] PROGMEM = {
 //     { { 0b01111110, 0b11111111, 0b10000001, 0b10000001, 0b11111111, 0b01111110 }, 6 },   //0

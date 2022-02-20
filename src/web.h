@@ -17,7 +17,6 @@
 #include <ESPAsyncDNSServer.h>
 #endif
 
-
 enum _web_pages_en { 
     WEB_PAGES_NORMAL = 0,
     WEB_PAGES_FOR_AP  
@@ -31,12 +30,7 @@ typedef enum state_wifi_en {
 } StateWifi;
 extern StateWifi WifiState;
 
-extern String html_PressureHistory;
-
-extern String pressureLabelsStr;
-extern String pressureValuesStr;
-
-bool testWifi(void);
+void web_init(void);
 void launchWeb(int webtype);
 void setupAP(void);
 void createWebServer(int webtype);
