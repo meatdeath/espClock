@@ -24,11 +24,16 @@ void config_init(void) {
     memset(&config_wifi, 0xFF, sizeof(config_wifi_t));
     memset(&config_auth, 0xFF, sizeof(config_auth_t));
     memset(&config_clock, 0xFF, sizeof(config_clock_t));
-    eeprom.read(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
-    eeprom.read(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
-    eeprom.read(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
+    for( uint16_t i = 0; i < sizeof(config_wifi_t); i++ ) {
+        ((uint8_t*)&config_wifi)[i] = eeprom.read(EEPROM_CONFIG_WIFI_ADDR+i);
+    }
+    for( uint16_t i = 0; i < sizeof(config_auth_t); i++ ) {
+        ((uint8_t*)&config_auth)[i] = eeprom.read(EEPROM_CONFIG_AUTH_ADDR+i);
+    }
+    for( uint16_t i = 0; i < sizeof(config_clock_t); i++ ) {
+        ((uint8_t*)&config_clock)[i] = eeprom.read(EEPROM_CONFIG_CLOCK_ADDR+i);
+    }
     config_validate();
-    //config_printDumpFromEeprom();
 }
 
 int16_t config_gettimeoffset(int8_t *h_offset, int8_t *m_offset) {
@@ -61,15 +66,13 @@ void config_settimeoffset(int8_t hours_offset, int8_t minutes_offset) {
     Serial.printf("Set offset: addr=0x%04x data: %02x %02x\r\n", EEPROM_CONFIG_CLOCK_ADDR, (int8_t)config_clock.hour_offset, (int8_t)config_clock.minute_offset);
     
     uint8_t *ptr = (uint8_t*)&config_clock;
-    for( uint8_t i = 0; i < sizeof(config_clock_t); i++ ) 
+    for( uint8_t i = 0; i < sizeof(config_clock_t); i++ ) {
         eeprom.write(EEPROM_CONFIG_CLOCK_ADDR+i, ptr[i]);
-
-    config_printDumpFromEeprom();
+    }
 }
 
 void config_validate(void) {
     Serial.println("Config validation");
-    config_printDumpFromEeprom();
     Serial.printf("config_wifi.name: %s\r\n",config_wifi.name);
     Serial.printf("config_wifi.password: %s\r\n",config_wifi.password);
     if( config_wifi.valid_marker != VALID_CONFIG_MARKER ) 

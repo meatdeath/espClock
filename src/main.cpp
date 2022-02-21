@@ -306,3 +306,39 @@ void loop() {
     }
     delay(1);
 }
+
+// void LedMatrix::Rotate90() {
+//     for( byte device = 0; device < myNumberOfDevices; device++ ) {
+//         byte result[8] = {0};
+//         for( byte i = 0; i < 8; i++ ) {
+//             for( byte j = 0; j < 8; j++ ) {
+//                 if( cols[i+device*8] & (1<<j) ) {
+//                 //if( cols[i] & (1<<j) ) {
+//                     result [7-j] |= 1<<i;
+//                 } else {
+//                     result [7-j] &= ~(1<<i);
+//                 }
+//             }
+//         }
+//         for( byte i = 0; i < 8; i++ ) {
+//             cols[device*8+i] = result[i];
+//             //cols[i] = result[i];
+//         }
+//     }
+// }
+
+
+// unsigned long NTPClient::getRawEpochTime() {
+//   return this->_timeOffset + // User offset
+//          this->_currentEpoc; // Epoc returned by the NTP server
+// }
+
+
+// void LedMatrix::setTextOffset(byte offset) {
+//     myTextOffset = (myTextOffset-offset) % ((int)myText.length() * myCharWidth + myNumberOfDevices * 8);
+//     if (myTextOffset == 0 && myNextText.length() > 0) {
+//         myText = myNextText;
+//         myNextText = "";
+//         calculateTextAlignmentOffset();
+//     }
+// }

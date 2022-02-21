@@ -104,7 +104,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
     pressure_history_item[pressure_history_end].pressure = pressure;
 
     uint8_t *ptr = (uint8_t*)&pressure_history_item[pressure_history_end];
-    for( int i = 0; i < EEPROM_HISTORY_ITEM_SIZE; i++ ) 
+    for( uint16_t i = 0; i < EEPROM_HISTORY_ITEM_SIZE; i++ ) 
         eeprom.write(addr+i, ptr[i]);
     //eepStatus = eeprom.write( addr, (uint8_t*)&pressure_history_item[pressure_history_end], EEPROM_HISTORY_ITEM_SIZE );
     Serial.printf("EEPROM status: %d\r\n", eepStatus);
@@ -119,7 +119,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
     }
     if( pressure_history_start == PRESSURE_HISTORY_SIZE ) {
         pressure_history_start = 0;
-    } 
+    }
 }
 
 void eeprom_restore_pressure_history(unsigned long time) {
@@ -206,16 +206,10 @@ pressureHistory_printDumpFromEeprom();
     }
     Serial.printf("History: start=%d, end=%d, size=%d\r\n", pressure_history_start, pressure_history_end, pressure_history_size);
 
-    // pressureHistory_printDumpFromEeprom();
-
     // Update pressure history in eeprom
-    for( int i = 0; i < PRESSURE_HISTORY_SIZE; i++) {
-        eepStatus = eeprom.write( EEPROM_HISTORY_ADDR+i*EEPROM_HISTORY_ITEM_SIZE, 
-                                    (uint8_t*)(&pressure_history_item[i]), 
-                                    EEPROM_HISTORY_ITEM_SIZE );
+    for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++) {
+        eepStatus = eeprom.write( EEPROM_HISTORY_ADDR+i, ((uint8_t*)pressure_history_item)[i] );
     }
-
-    // pressureHistory_printDumpFromEeprom();
 
     // byte *ptr = (uint8_t*)(&pressure_history_item[0]);
     // for(int i = 0; i < PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE; i++ ) {

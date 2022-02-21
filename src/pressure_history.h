@@ -23,5 +23,6 @@ void eeprom_add_history_item( unsigned long time, float pressure );
 void eeprom_restore_pressure_history(unsigned long time);
 void clear_log(void);
 void pressureHistory_printDumpFromEeprom();
+void config_printDumpFromEeprom();
 
 #endif // __PRESSURE_HISTORY_H__
