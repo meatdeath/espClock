@@ -42,7 +42,8 @@ void generate_pressure_history(void) {
     json_PressureHistory += pressure;
     json_PressureHistory += "\"history\":[";
     uint16_t time = pressure_history_size-1;
-    for(uint16_t i = pressure_history_start; i != pressure_history_end; )
+    uint16_t i = pressure_history_start;
+    for(uint16_t j = 0; j < pressure_history_size; j++ )
     {
         Serial.printf("   [%d] time:%lu   pressure:%3.1f\r\n", i, pressure_history_item[i].time, pressure_history_item[i].pressure);
         if( i != pressure_history_start ) 
@@ -128,7 +129,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
     pressure_history_end = 0;
     pressure_history_size = 0;
 
-    Serial.printf("Restore history time: %08x\r\n", time);
+    Serial.printf("Restore history time: 0x%08lx / %lu\r\n", time, time);
 
     Serial.println("Read history from EEPROM");
     for( int i = 0; i < PRESSURE_HISTORY_SIZE; i++ ) {
@@ -149,13 +150,14 @@ pressureHistory_printDumpFromEeprom();
             //Serial.printf("Skip empty item [%d].\r\n", i);
         }
         else 
-        if( (i > 0 && 
+        if( (//i > 0 && 
                 (pressure_history_item[i].time > time || // invalid item time
                  pressure_history_item[i].time < (time - PRESSURE_HISTORY_SIZE*COLLECT_PRESSURE_HISTORY_PERIOD))) || // outdated item
             !(pressure_history_item[i].pressure >= 700 && pressure_history_item[i].pressure < 801) )  // invalid item pressure
         {
+            //Serial.printf("Item [%d] time : %lu\r\n", i, pressure_history_item[i].time);
             if( pressure_history_item[i].time > time ) Serial.printf("Delete item [%d], it has invalid big time %lu\r\n", i, pressure_history_item[i].time);
-            else if( pressure_history_item[i].time < (time - PRESSURE_HISTORY_SIZE*COLLECT_PRESSURE_HISTORY_PERIOD) )  Serial.printf("Delete item [%d], it has invalid small time %lu\r\n", i, pressure_history_item[i].time);
+            else if( pressure_history_item[i].time < (time - PRESSURE_HISTORY_SIZE*COLLECT_PRESSURE_HISTORY_PERIOD) )  Serial.printf("Delete item [%d], it has invalid old time %lu\r\n", i, pressure_history_item[i].time);
             else if( pressure_history_item[i].pressure < 700 ) Serial.printf("Delete item [%d], it has invalid low pressure %f\r\n", i, pressure_history_item[i].pressure);
             else if( pressure_history_item[i].pressure > 800 ) Serial.printf("Delete item [%d], it has invalid high pressure %f\r\n", i, pressure_history_item[i].pressure);
             else 

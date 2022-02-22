@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "RTClib.h"
+#include "pressure_history.h"
 
 #define RTC_SQW_PIN 12
 
@@ -14,7 +15,6 @@ bool rtc_LocalTimeRequireProcessing(void);
 void rtc_SetLocalTimeProcessed(void);
 
 #define RTC_SECONDS_2000_01_01   946684800L
-#define COLLECT_PRESSURE_HISTORY_PERIOD 60 //60*120// add point to pressure history period = 2h
 
 enum sw_timers_en {
     SW_TIMER_SENSOR_UPDATE = 0,

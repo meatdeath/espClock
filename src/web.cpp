@@ -452,64 +452,6 @@ void createWebServer(int webtype)
             request->send_P(200, "text/plain", "OK");
         });
 
-//         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-//             IPAddress ip = WiFi.softAPIP();
-//             content = 
-// "<!DOCTYPE HTML>"
-// "   <html>"
-// "       <head>"
-// "			<style>"
-// "				input[type='radio'] { margin: 0 10px 0 0; }"
-// "			</style>"
-// "           <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>"
-// "           <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous'>"
-// "       </head>"
-// "       <body>"
-// "           <div style='font-size:3em; padding:30px;'>"
-// "               <h1>ESPClock</h1>"
-// "               <p>IP address: " + ip.toString() + "</p>"
-// "               <hr>" +
-//                 json_PressureHistory +
-// "               <hr>"
-// "               <p>"
-// "                   <label for='hour_offset'>Hours offset</label>"
-// "                   <input type='number' id='hour_offset' name='hour_offset' value='" + ((String)config.clock.hour_offset) + "' min='-12' max='12' onchange='setOffset(this);'>"
-// "               </p>"
-// "               <p>"
-// "                   <label for='minutes_offset'>Minutes offset</label>"
-// "                   <input type='number' id='minutes_offset' name='minutes_offset' value='" + ((String)config.clock.minute_offset) + "' min='0' max='59' onchange='setOffset(this);'>"
-// "               </p>"
-// "               <form method='get' action='setting'>"
-//                     "<hr>"
-// "                   <p style='margin:0 0 5px 0'>Choose a network to connect</p>" +
-//                     htmlRadio_NetworksList +
-//                     "<br>"
-//                     "<p>"
-// "                       <label for='pass'>Password</label>"
-// "                       <input name='pass' type='password' length=64>"
-//                     "</p>"
-// "                   <hr>"
-// "                   <button type='submit' class='btn btn-primary'>Save WiFi settings</button>"
-// "               </form>"
-// "           </div>"
-// "       </body>"
-// "       <script src='https://code.jquery.com/jquery-3.2.1.slim.min.js' integrity='sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN' crossorigin='anonymous'></script>"
-// "       <script src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js' integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q' crossorigin='anonymous'></script>"
-// "       <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js' integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl' crossorigin='anonymous'></script>"
-// "       <script>"
-// "           function setOffset() {"
-//                 "var xhttp = new XMLHttpRequest();"
-//                 "xhttp.onreadystatechange = function() {"
-//                 "};"
-//                 "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
-//                 "xhttp.open('GET', '/time_offset'+param, true);"
-//                 "xhttp.send();"
-// "           }"
-// "       </script>"
-// "   </html>";
-
-//             request->send_P(200, "text/html", content.c_str());  
-//         });
         server.on("/setting", HTTP_GET, [](AsyncWebServerRequest *request) {
             Serial.println("Store network params...");
             AsyncWebParameter *p;
@@ -659,7 +601,20 @@ void createWebServer(int webtype)
     else if (webtype == WEB_PAGES_NORMAL) 
     {
         Serial.print("Creating Device server ...");
+        
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+            Serial.println("Accessing root page...");
+            //request->send(LittleFS, "/index-ap.html", "text/html");
+            request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
+        });
+        Serial.print(".");
+        server.onNotFound([](AsyncWebServerRequest *request) {
+            //request->send_P(404,"text/plain", "");
+            Serial.println("Handle not found page...");
+            handleWebRequests(request);
+        }); // Set server all paths are not found so we can handle as per URI 
+        /*server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             IPAddress ip = WiFi.localIP();
             String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
             String updateDateTime = (String)rtc_dt.year() + "/" + 
@@ -759,7 +714,7 @@ void createWebServer(int webtype)
                     "</script>"
                 "</html>";
             request->send_P(200, "text/html", content.c_str());  
-        });
+        });*/
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             Serial.println("Set time_offset----------------------------------------");
 

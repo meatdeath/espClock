@@ -9,7 +9,9 @@ typedef struct pressure_history_st {
 } pressure_history_t;
 #pragma pack(pop)
 
-#define PRESSURE_HISTORY_SIZE       96
+#define COLLECT_PRESSURE_HISTORY_PERIOD (60*60)
+
+#define PRESSURE_HISTORY_SIZE       48
 #define EEPROM_HISTORY_ADDR         (EEPROM_CONFIG_CLOCK_ADDR+EEPROM_CONFIG_CLOCK_SIZE)
 #define EEPROM_HISTORY_ITEM_SIZE    sizeof(pressure_history_t)
 
