@@ -103,7 +103,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
     pressure_history_item[pressure_history_end].time = time;
     pressure_history_item[pressure_history_end].pressure = pressure;
 
-    uint8_t *ptr = (uint8_t*)&pressure_history_item[pressure_history_end];
+    uint8_t *ptr = (uint8_t*)&(pressure_history_item[pressure_history_end]);
     for( uint16_t i = 0; i < EEPROM_HISTORY_ITEM_SIZE; i++ ) 
         eeprom.write(addr+i, ptr[i]);
     //eepStatus = eeprom.write( addr, (uint8_t*)&pressure_history_item[pressure_history_end], EEPROM_HISTORY_ITEM_SIZE );
@@ -127,6 +127,8 @@ void eeprom_restore_pressure_history(unsigned long time) {
     pressure_history_start = 0;
     pressure_history_end = 0;
     pressure_history_size = 0;
+
+    Serial.printf("Restore history time: %08x\r\n", time);
 
     Serial.println("Read history from EEPROM");
     for( int i = 0; i < PRESSURE_HISTORY_SIZE; i++ ) {
