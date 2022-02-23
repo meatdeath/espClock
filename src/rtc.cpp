@@ -119,14 +119,8 @@ void rtc_SetLocalTimeProcessed(void) {
 }
 
 void rtc_Init(void) {
-    
-    Serial.println("Init pin interrupt");
-    pinMode(RTC_SQW_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
-    Serial.println("Init pin interrupt done");
-
-    delay(3000); // wait for console opening
  
+    delay(100);
     if (! rtc.begin()) {
         Serial.println("Couldn't find RTC");
         while (1);
@@ -140,11 +134,18 @@ void rtc_Init(void) {
         // January 21, 2014 at 3am you would call:
         // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
     }
-    delay(1000);
     DateTime dt = rtc.now();
     Serial.printf("RTC init time: %02d:%02d:%02d\r\n", dt.hour(), dt.minute(), dt.second());
     rtc.writeSqwPinMode(DS3231_SquareWave1Hz);
     rtc_SecondsSinceUpdate = 0;
+    
+    
+    delay(100);
+    Serial.println("Init pin interrupt");
+    pinMode(RTC_SQW_PIN, INPUT);
+    attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
+    Serial.println("Init pin interrupt done");
+
 }
 
 void rtc_GetDT(DateTime *dst_dt) {

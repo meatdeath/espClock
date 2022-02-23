@@ -43,11 +43,9 @@ function getPressure()
     };
     xhttp.open('GET', 'getPressure', true);
     xhttp.send();
-}
 
-// function getPressureData() {
-//     return pressure_history_data;
-// }
+    // updatePressureGraph();
+}
 
 
 var pressure_chart = undefined;
@@ -203,8 +201,7 @@ window.onload = function() {
                                 }
                                 else 
                                 {
-                                    if( (last_time == 6 && label == 8) || 
-                                        (last_time == 18 && label == 20) ) 
+                                    if( last_time != -1 && (label == 8 || label == 20) ) 
                                     {
                                         back_color++;
                                     }

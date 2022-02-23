@@ -330,12 +330,6 @@ void loop() {
 // }
 
 
-// unsigned long NTPClient::getRawEpochTime() {
-//   return this->_timeOffset + // User offset
-//          this->_currentEpoc; // Epoc returned by the NTP server
-// }
-
-
 // void LedMatrix::setTextOffset(byte offset) {
 //     myTextOffset = (myTextOffset-offset) % ((int)myText.length() * myCharWidth + myNumberOfDevices * 8);
 //     if (myTextOffset == 0 && myNextText.length() > 0) {
@@ -343,4 +337,10 @@ void loop() {
 //         myNextText = "";
 //         calculateTextAlignmentOffset();
 //     }
+// }
+
+
+// unsigned long NTPClient::getRawEpochTime() {
+//   return this->_timeOffset + // User offset
+//          this->_currentEpoc; // Epoc returned by the NTP server
 // }
