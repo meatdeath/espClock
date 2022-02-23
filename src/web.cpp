@@ -715,6 +715,20 @@ void createWebServer(int webtype)
                 "</html>";
             request->send_P(200, "text/html", content.c_str());  
         });*/
+
+        server.on("/getTemperature", HTTP_GET, [](AsyncWebServerRequest *request){
+            // if( !request->authenticate(http_username,http_password) )
+            //     return request->requestAuthentication();
+            char temperature_str[10];
+            sprintf(temperature_str, "%3.1f", temperature);
+            request->send_P(200, "text/plain", temperature_str);
+        });
+
+        server.on("/getPressure", HTTP_GET, [](AsyncWebServerRequest *request){
+            // if( !request->authenticate(http_username,http_password) )
+            //     return request->requestAuthentication();
+            request->send_P( 200, "text/plain", json_PressureHistory.c_str() );
+        });
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             Serial.println("Set time_offset----------------------------------------");
 

@@ -1,5 +1,5 @@
 
-const pressure_history_data = '{\
+var pressure_history_data = '{\
     "current":745,\
     "history":[\
         {"time":1642643026,"value":762},\
@@ -32,24 +32,28 @@ const pressure_history_data = '{\
 var last_time = -1;
 var back_color = 0;
 
-function getPressureData() {
-    return pressure_history_data;
-    /*var xhttp = new XMLHttpRequest();
+function getPressure() 
+{
+    var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             pressure_history_data = this.responseText;
+            updatePressureGraph();
         }
     };
-    xhttp.open('GET', 'readPressure', true);
-    xhttp.send();*/
+    xhttp.open('GET', 'getPressure', true);
+    xhttp.send();
 }
+
+// function getPressureData() {
+//     return pressure_history_data;
+// }
 
 
 var pressure_chart = undefined;
 function updatePressureGraph() {
     if( pressure_chart != undefined ) {
-        var p_history_str = getPressureData();
-        var p_history = JSON.parse(p_history_str);
+        var p_history = JSON.parse(pressure_history_data);
         var labels_arr = [];
         var data_arr = [];
         var index_data_arr = [];
@@ -223,8 +227,9 @@ window.onload = function() {
                 }
             }
         });
-        updatePressureGraph();
-        setInterval( updatePressureGraph, 5000 );
+        //updatePressureGraph();
+        getPressure();
+        setInterval( getPressure, 5000 );
     }, 500 );
 
     document.getElementById("hour_offset").value = h_offset;

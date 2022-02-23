@@ -1,10 +1,10 @@
 #include <Arduino.h>
+#include <extEEPROM.h>
 #include "pressure_history.h"
 #include "config.h"
 #include "rtc.h"
 
-#include <extEEPROM.h>
-
+//-----------------------------------------------------------------------------
 
 uint16_t pressure_history_size = 0;
 uint16_t pressure_history_start = 0;
@@ -21,6 +21,7 @@ extern float pressure;
 
 pressure_history_t pressure_history_item[PRESSURE_HISTORY_SIZE] = {0};
 
+//-----------------------------------------------------------------------------
 
 void pressureHistory_printDumpFromEeprom() {
     for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE * sizeof(pressure_history_t)); i++ ) {
@@ -40,7 +41,7 @@ void generate_pressure_history(void) {
     Serial.println("----- Pressure history -----");
     json_PressureHistory = "{\"current\":";
     json_PressureHistory += pressure;
-    json_PressureHistory += "\"history\":[";
+    json_PressureHistory += ",\"history\":[";
     uint16_t time = pressure_history_size-1;
     uint16_t i = pressure_history_start;
     for(uint16_t j = 0; j < pressure_history_size; j++ )
@@ -51,7 +52,11 @@ void generate_pressure_history(void) {
         json_PressureHistory += "{\"time\":";
         json_PressureHistory += pressure_history_item[i].time;
         json_PressureHistory += ",\"value\":";
-        json_PressureHistory += pressure_history_item[i].pressure;
+        if( pressure_history_item[i].pressure == 800 ) {
+            json_PressureHistory += "null";
+        } else {
+            json_PressureHistory += pressure_history_item[i].pressure;
+        }
         json_PressureHistory += "}";
 
         uint32_t time_sec = pressure_history_item[i].time + config_clock.hour_offset*3600 + config_clock.minute_offset*60;
@@ -138,7 +143,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
                                 EEPROM_HISTORY_ITEM_SIZE );
     }
     Serial.printf("EEPROM status: %d\r\n", eepStatus);
-pressureHistory_printDumpFromEeprom();
+//pressureHistory_printDumpFromEeprom();
     // Remove invalid and outdated items
     pressure_history_t empty_item;
     memset((uint8_t*)(&empty_item), 0xFF, sizeof(pressure_history_t));
@@ -271,7 +276,7 @@ pressureHistory_printDumpFromEeprom();
 }
 
 void clear_log(void) {
-    for( uint8_t i = 0; i < (PRESSURE_HISTORY_SIZE*sizeof(pressure_history_t)); i++ ) {
+    for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE*sizeof(pressure_history_t)); i++ ) {
         eeprom.write( EEPROM_HISTORY_ADDR + i, 0xff );
     }
 }

@@ -64,6 +64,8 @@ void setup() {
         while (1);
     }
 
+    //clear_log();
+
     // Serial.println("Start eeprom check...");
 
     // uint8_t bytes[5] = {0x00, 0x55, 0xAA, 0x3C, 0xFF};
