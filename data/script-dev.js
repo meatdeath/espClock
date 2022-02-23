@@ -164,8 +164,8 @@ window.onload = function() {
                     yAxes: [{
                         id: 'pressure-axis',
                         ticks: {
-                            suggestedMin: 720,
-                            suggestedMax: 780
+                            suggestedMin: 730,
+                            suggestedMax: 770
                         }
                     }],
                     xAxes: [{
