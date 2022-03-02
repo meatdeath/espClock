@@ -107,7 +107,7 @@ void config_validate(void) {
             config_clock.hour_offset = 0;
             Serial.println("Hour offset fixed");
         }
-        if( config_clock.minute_offset < 0 || config_clock.minute_offset > 59 ) {
+        if( config_clock.minute_offset > 59 ) {
             changed = true;
             config_clock.minute_offset = 0;
             Serial.println("Minute offset fixed");

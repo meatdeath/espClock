@@ -163,12 +163,9 @@ uint8_t last_shown_display = DISPLAY_CLOCK;
 uint8_t intensity = 15;
 uint8_t measured_intensity = 1;
 
-#include "ESP8266mDNS.h"
-
 void loop() {
     int ambianceValue = 0;  // value abiance read from the port
     wifi_processing();
-    MDNS.update();
 
     if(softreset==true) {
         Serial.println("The board will reset in 10s ");
@@ -187,15 +184,15 @@ void loop() {
             //Serial.println("It's time to update from time server");
             if( timeClient.forceUpdate() )
             {
-                Serial.printf("Local time updated from NTP with %lus.\r\n", timeClient.getRawEpochTime());
+                //Serial.printf("Local time updated from NTP with %lus.\r\n", timeClient.getRawEpochTime());
                 rtc_SecondsSinceUpdate = 0;
             }
         }
         if( swTimerIsTriggered(SW_TIMER_RTC_MODULE_UPDATE, true) ) {
             uint32_t epoch_time = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
-            Serial.printf("Updating RTC module with epoch time %u... \r\n", epoch_time);
+            //Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
             rtc_SetEpoch(epoch_time);
-            Serial.println("done");
+            //Serial.println("done");
         }
     } else {
         if( swTimerIsTriggered(SW_TIMER_GET_TIME_FROM_RTC_MODULE, true) ) {
@@ -231,14 +228,13 @@ void loop() {
     if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
         unsigned long timeinsec;
         Serial.print("Time to collect pressure history: ");
-        if(time_sync_with_ntp_enabled) {
-            timeinsec = 
-                timeClient.getRawEpochTime() + 
-                //config.clock.hour_offset*3600 + 
-                //config.clock.minute_offset*60 + 
-                rtc_SecondsSinceUpdate;
+        if(time_sync_with_ntp_enabled) 
+        {
+            timeinsec = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
             Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
-        } else {
+        } 
+        else 
+        {
             timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
             Serial.printf("Time from rtc module %lu, pressure %3.1f\r\n", timeinsec, pressure);
         }

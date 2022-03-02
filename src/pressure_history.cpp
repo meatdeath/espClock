@@ -38,7 +38,7 @@ void generate_pressure_history(void) {
     pressureValuesStr = "";
     html_PressureHistory = "";
 
-    Serial.println("----- Pressure history -----");
+    //Serial.println("----- Pressure history -----");
     json_PressureHistory = "{\"current\":";
     json_PressureHistory += pressure;
     json_PressureHistory += ",\"history\":[";
@@ -46,7 +46,7 @@ void generate_pressure_history(void) {
     uint16_t i = pressure_history_start;
     for(uint16_t j = 0; j < pressure_history_size; j++ )
     {
-        Serial.printf("   [%d] time:%lu   pressure:%3.1f\r\n", i, pressure_history_item[i].time, pressure_history_item[i].pressure);
+        // Serial.printf("   [%d] time:%lu   pressure:%3.1f\r\n", i, pressure_history_item[i].time, pressure_history_item[i].pressure);
         if( i != pressure_history_start ) 
             json_PressureHistory += ",";
         json_PressureHistory += "{\"time\":";
@@ -64,27 +64,20 @@ void generate_pressure_history(void) {
         uint8_t minute = (time_sec/60) % 60;
         html_PressureHistory += (String)"<tr><td>" + hour + (String)"h " + minute + (String)"min</td>";
         html_PressureHistory += (String)"<td>" + pressure_history_item[i].pressure + (String)"mmm</td></tr>";
-        //json_PressureHistory += "<tr><td>";
         pressureLabelsStr += "\"";
-        //json_PressureHistory += time*2;
-        //json_PressureHistory += "h";
         if((time&1) == 0) {
             pressureLabelsStr += time*2;
             pressureLabelsStr += "h";
         }
         pressureLabelsStr += "\"";
 
-        //json_PressureHistory += "</td><td>";
-
         if( pressure_history_item[i].pressure != 800 )
         {
             pressureValuesStr += pressure_history_item[i].pressure;
-            //json_PressureHistory += pressure_history_item[i].pressure;
         }
         else
         {
             pressureValuesStr += "null";
-            //json_PressureHistory += '-';
         }
 
         i++;
@@ -96,10 +89,9 @@ void generate_pressure_history(void) {
         }
         time--;
     }
-    //json_PressureHistory += "</table>";
 
     json_PressureHistory += "]}";
-    Serial.println("----------------------------");
+    //Serial.println("----------------------------");
 }
 
 
@@ -143,7 +135,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
                                 EEPROM_HISTORY_ITEM_SIZE );
     }
     Serial.printf("EEPROM status: %d\r\n", eepStatus);
-//pressureHistory_printDumpFromEeprom();
+pressureHistory_printDumpFromEeprom();
     // Remove invalid and outdated items
     pressure_history_t empty_item;
     memset((uint8_t*)(&empty_item), 0xFF, sizeof(pressure_history_t));
@@ -175,7 +167,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
         } 
         else 
         {
-            Serial.printf("Keep item on index=%d, pressure=%f, time=%lu\r\n", 
+            Serial.printf("Keep item [%d], pressure: %f mm, time: %lu sec\r\n", 
                 i,
                 pressure_history_item[i].pressure, 
                 pressure_history_item[i].time);
@@ -239,14 +231,14 @@ void eeprom_restore_pressure_history(unsigned long time) {
             last_item_index = pressure_history_end-1;
         }
         unsigned long last_item_time = pressure_history_item[last_item_index].time;
-        Serial.printf("Last item [%d] time %lu\r\n", last_item_index, last_item_time);
+        Serial.printf("Last item [%d] time %lu sec\r\n", last_item_index, last_item_time);
 
         if( last_item_time > (time-COLLECT_PRESSURE_HISTORY_PERIOD*PRESSURE_HISTORY_SIZE) ) {
             while( last_item_time < (time-COLLECT_PRESSURE_HISTORY_PERIOD) )
             {
                 last_item_time += COLLECT_PRESSURE_HISTORY_PERIOD;
                 eeprom_add_history_item( last_item_time, 800 );
-                Serial.printf("Add hole item with time %lu\r\n", last_item_time);
+                Serial.printf("Add hole item with time %lu sec\r\n", last_item_time);
             }
         } else {
             memset( &pressure_history_item, 0xff, PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
@@ -255,22 +247,27 @@ void eeprom_restore_pressure_history(unsigned long time) {
             pressure_history_size = 0;
         }
 
-        // calculate timeout
-        uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time-last_item_time);
-        if( downcounter == 0 ) downcounter = COLLECT_PRESSURE_HISTORY_PERIOD;
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = downcounter;
-        Serial.printf("Time until next pressure collection: %us\r\n", downcounter);
+        // // calculate timeout
+        // uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time-last_item_time);
+        // if( downcounter == 0 ) downcounter = COLLECT_PRESSURE_HISTORY_PERIOD;
+        // sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+        // sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = downcounter;
+        // Serial.printf("Time until next pressure collection: %us\r\n", downcounter);
     
     } else {
-        // calculate timeout
-        uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time%COLLECT_PRESSURE_HISTORY_PERIOD);
-        if( downcounter == 0 ) downcounter = COLLECT_PRESSURE_HISTORY_PERIOD;
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
-        sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = downcounter;
-        Serial.printf("Time until next pressure collection: %us\r\n", downcounter);
+        // // calculate timeout
+        // uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time%COLLECT_PRESSURE_HISTORY_PERIOD);
+        // if( downcounter == 0 ) downcounter = COLLECT_PRESSURE_HISTORY_PERIOD;
+        // sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+        // sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = downcounter;
+        // Serial.printf("Time until next pressure collection: %us\r\n", downcounter);
     }
-    //sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = 60;
+
+        // calculate timeout
+    uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time%COLLECT_PRESSURE_HISTORY_PERIOD);
+    sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].downcounter = downcounter;
+    sw_timer[SW_TIMER_COLLECT_PRESSURE_HISTORY].triggered = false;
+    Serial.printf("Time until next pressure collection: %u sec\r\nTime of next collection: %lu sec\r\n", downcounter, time+downcounter );
 
     generate_pressure_history();
 }

@@ -119,6 +119,8 @@ void wifi_processing(void) {
             WiFi.disconnect();
             WifiState = STATE_WIFI_IDLE;
         }
+        
+        MDNS.update();
         /* code */
         break;
     case STATE_WIFI_AP:
@@ -132,8 +134,7 @@ void wifi_processing(void) {
 }
 
 void launchWeb(int webtype) {
-    Serial.println("");
-    Serial.println("WiFi connected");
+
     Serial.print("Local IP: ");
     Serial.println(WiFi.localIP());
     Serial.print("SoftAP IP: ");
@@ -144,6 +145,11 @@ void launchWeb(int webtype) {
 
     server.begin();
     Serial.println("Server started"); 
+
+    Serial.print("Starting mDNS... ");
+    bool mdns_result = MDNS.begin("espclock", WiFi.localIP());
+    if(!mdns_result) Serial.println("FAILED !");
+    else Serial.println("done");
 }
 
 void setupAP(void) {
@@ -276,6 +282,10 @@ String processor(const String& var){
     }
     else if (var == "IP_ADDRESS"){
         IPAddress ip = WiFi.softAPIP();
+        return ip.toString();
+    }
+    else if (var == "LOCAL_IP_ADDRESS"){
+        IPAddress ip = WiFi.localIP();
         return ip.toString();
     }
     else if (var == "HOURS_OFFSET"){

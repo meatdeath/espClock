@@ -59,7 +59,7 @@ function updatePressureGraph() {
         var last_item_hour = 0;
         last_time = -1;
         back_color = 0;
-        document.getElementById("CurrentPressureValue").innerText = p_history.current+"mm";
+        document.getElementById("pressure-text").innerText = p_history.current+"mm";
         for( var i = 0; i < p_history.history.length; i++) {
             var itemDate = new Date(p_history.history[i].time*1000);
             var itemHour = itemDate.getHours();

@@ -10,7 +10,7 @@ DateTime rtc_dt;
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
  
 
-volatile unsigned long rtc_SecondsSinceUpdate;
+volatile uint16_t rtc_SecondsSinceUpdate;
 
 volatile bool local_time_updated = false;
 
@@ -140,7 +140,7 @@ void rtc_Init(void) {
     rtc_SecondsSinceUpdate = 0;
     
     
-    delay(100);
+    delay(2000);
     Serial.println("Init pin interrupt");
     pinMode(RTC_SQW_PIN, INPUT);
     attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
@@ -163,6 +163,6 @@ void rtc_SetDT(DateTime dt) {
 void rtc_SetEpoch(uint32_t epoch_time) {
     rtc.adjust( DateTime(epoch_time) );
     rtc_SecondsSinceUpdate = 0;
-    Serial.println("rtc_SetEpoch");
+    //Serial.println("rtc_SetEpoch");
 }
 

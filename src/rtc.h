@@ -42,7 +42,7 @@ typedef struct soft_timer_st {
 void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value );
 bool swTimerIsTriggered( enum sw_timers_en sw_timer, bool autoreset );
 
-extern volatile unsigned long rtc_SecondsSinceUpdate;
+extern volatile uint16_t rtc_SecondsSinceUpdate;
 extern DateTime rtc_dt;
 extern volatile soft_timer_t sw_timer[SW_TIMER_MAX];
 
