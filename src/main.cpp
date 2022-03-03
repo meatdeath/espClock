@@ -179,7 +179,7 @@ void loop() {
     }
 
     if(time_sync_with_ntp_enabled) {
-        if( swTimerIsTriggered(SW_TIMER_NTP_TIME_UPDATE, true) ) // It's time to update from time server
+        if( swTimer[SW_TIMER_NTP_TIME_UPDATE].IsTriggered(true) ) // It's time to update from time server
         {
             //Serial.println("It's time to update from time server");
             if( timeClient.forceUpdate() )
@@ -188,19 +188,19 @@ void loop() {
                 rtc_SecondsSinceUpdate = 0;
             }
         }
-        if( swTimerIsTriggered(SW_TIMER_RTC_MODULE_UPDATE, true) ) {
+        if( swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true) ) {
             uint32_t epoch_time = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
             //Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
             rtc_SetEpoch(epoch_time);
             //Serial.println("done");
         }
     } else {
-        if( swTimerIsTriggered(SW_TIMER_GET_TIME_FROM_RTC_MODULE, true) ) {
+        if( swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].IsTriggered(true) ) {
             rtc_GetDT(&rtc_dt);
         }
     }
 
-    if( swTimerIsTriggered(SW_TIMER_GET_AMBIANCE, true) && pressure != 0 ) {
+    if( swTimer[SW_TIMER_GET_AMBIANCE].IsTriggered(true) && pressure != 0 ) {
         ambianceValue = analogRead(analogInPin);
         // 3.3v -> 1024
         // 2.4v -> 740
@@ -225,7 +225,7 @@ void loop() {
         display_intensity(16-intensity);
     }
 
-    if( swTimerIsTriggered(SW_TIMER_COLLECT_PRESSURE_HISTORY, true) && pressure != 0 ) {
+    if( swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].IsTriggered(true) && pressure != 0 ) {
         unsigned long timeinsec;
         Serial.print("Time to collect pressure history: ");
         if(time_sync_with_ntp_enabled) 
@@ -281,24 +281,24 @@ void loop() {
             break;
     }
 
-    if( swTimerIsTriggered(SW_TIMER_SENSOR_UPDATE,true) ) {
+    if( swTimer[SW_TIMER_SENSOR_UPDATE].IsTriggered(true) ) {
         read_bmp_sensor();
     }
 
-    if( swTimerIsTriggered(SW_TIMER_SWITCH_DISPLAY,true) ) {
+    if( swTimer[SW_TIMER_SWITCH_DISPLAY].IsTriggered(true) ) {
         //Serial.printf("Time to switch display %d\r\n", show_display);
         switch(show_display) {
             case DISPLAY_CLOCK:
                 show_display = DISPLAY_TEMPERATURE;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = PRESSURE_SHOW_TIME;
+                swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(PRESSURE_SHOW_TIME);
                 break;
             case DISPLAY_TEMPERATURE:
                 show_display = DISPLAY_PRESSURE;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = CLOCK_SHOW_TIME;
+                swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(CLOCK_SHOW_TIME);
                 break;
             case DISPLAY_PRESSURE:
                 show_display = DISPLAY_CLOCK;
-                sw_timer[SW_TIMER_SWITCH_DISPLAY].updatetime = TEMPERATURE_SHOW_TIME;
+                swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(TEMPERATURE_SHOW_TIME);
                 break;
         }
     }

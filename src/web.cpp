@@ -297,6 +297,9 @@ String processor(const String& var){
     else if (var == "TEMPERATURE"){
         return String(temperature);
     }
+    else if (var == "PRESSURECOLLECTTIMELEFT"){
+        return String(swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter());
+    }
     else if (var == "PRESSURE"){
         return String(pressure);
     }  

@@ -32,18 +32,34 @@ typedef enum sw_timer_precision_en {
     SW_TIMER_PRECISION_MS
 } sw_timer_precision_t;
 
-typedef struct soft_timer_st {
-    bool triggered;
-    bool autoupdate;
-    uint16_t updatetime;
-    uint16_t downcounter;
-    sw_timer_precision_t precision;
-} soft_timer_t;
-void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value );
-bool swTimerIsTriggered( enum sw_timers_en sw_timer, bool autoreset );
+class SoftTimer {
+    public:
+        SoftTimer();
+        void Init(  bool active = false,
+                    uint16_t updatetime = 0, 
+                    uint16_t downcounter = 0, 
+                    bool triggered = false,
+                    bool autoupdate = false,
+                    sw_timer_precision_t precision = SW_TIMER_PRECISION_S);
+        void SetTriggered( bool triggered );
+        bool IsTriggered( bool autoreset );
+        void SetDowncounter( uint16_t downcounter );
+        uint16_t GetDowncounter();
+        void SetUpdateTime( uint16_t update_time);
+        uint16_t GetUpdateTime();
+        void _Tick();
+    private:
+        bool active;
+        bool triggered;
+        bool autoupdate;
+        uint16_t updatetime;
+        uint16_t downcounter;
+        sw_timer_precision_t precision;
+};
+
 
 extern volatile uint16_t rtc_SecondsSinceUpdate;
 extern DateTime rtc_dt;
-extern volatile soft_timer_t sw_timer[SW_TIMER_MAX];
+extern SoftTimer swTimer[SW_TIMER_MAX];
 
 #endif //__RTC_H__

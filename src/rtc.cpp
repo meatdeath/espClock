@@ -21,89 +21,113 @@ volatile bool local_time_updated = false;
 
 uint8_t sensor_update_time = DEFAULT_SENSOR_UPDATE_TIME;
 
-volatile soft_timer_t sw_timer[SW_TIMER_MAX] = {
-    {   // SW_TIMER_SENSOR_UPDATE
-        .triggered = false,
-        .autoupdate = true,
-        .updatetime = sensor_update_time,
-        .downcounter = sensor_update_time,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_GET_TIME_FROM_RTC_MODULE
-        .triggered = true,
-        .autoupdate = true,
-        .updatetime = 60, // each 1 min
-        .downcounter = 10,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_RTC_MODULE_UPDATE,
-        .triggered = false,
-        .autoupdate = true,
-        .updatetime = 60, // each 1 min
-        .downcounter = 60,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_NTP_TIME_UPDATE,
-        .triggered = true,
-        .autoupdate = true,
-        .updatetime = 60, // each 1 min
-        .downcounter = 30,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_SWITCH_DISPLAY
-        .triggered = false,
-        .autoupdate = true,
-        .updatetime = CLOCK_SHOW_TIME,
-        .downcounter = CLOCK_SHOW_TIME,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_COLLECT_PRESSURE_HISTORY
-        .triggered = true,
-        .autoupdate = true,
-        .updatetime = COLLECT_PRESSURE_HISTORY_PERIOD,
-        .downcounter = COLLECT_PRESSURE_HISTORY_PERIOD,
-        .precision = SW_TIMER_PRECISION_S
-    },
-    {   // SW_TIMER_GET_AMBIANCE
-        .triggered = true,
-        .autoupdate = true,
-        .updatetime = 1,
-        .downcounter = 1,
-        .precision = SW_TIMER_PRECISION_MS
-    }
-};
+SoftTimer swTimer[SW_TIMER_MAX];
 
-void swTimerSetTriggered( enum sw_timers_en sw_timer_index, bool value )
-{
-    sw_timer[sw_timer_index].triggered = value;
+void rtc_InitSoftTimers() {
+    swTimer[SW_TIMER_SENSOR_UPDATE].Init(true,sensor_update_time,sensor_update_time,false,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_RTC_MODULE_UPDATE].Init(true,60,60,false,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].Init(true,60,10,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_NTP_TIME_UPDATE].Init(true,60,30,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,CLOCK_SHOW_TIME,CLOCK_SHOW_TIME,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init(true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_GET_AMBIANCE].Init(true,1,1,true,true,SW_TIMER_PRECISION_MS);
 }
 
-bool swTimerIsTriggered( enum sw_timers_en sw_timer_index, bool autoreset )
+SoftTimer::SoftTimer() {
+    this->active = false;
+    this->triggered = false;
+    this->autoupdate = false;
+    this->updatetime = 0;
+    this->downcounter = 0;
+    this->precision = SW_TIMER_PRECISION_S;
+}
+
+void SoftTimer::Init(   bool active,
+                        uint16_t updatetime, 
+                        uint16_t downcounter, 
+                        bool triggered,
+                        bool autoupdate,
+                        sw_timer_precision_t precision)
+{
+    this->active = active;
+    this->triggered = triggered;
+    this->autoupdate = autoupdate;
+    this->updatetime = updatetime;
+    this->downcounter = downcounter;
+    this->precision = precision;
+}
+
+void SoftTimer::SetTriggered( bool triggered )
+{
+    noInterrupts();
+    this->triggered = triggered;
+    interrupts();
+}
+
+bool SoftTimer::IsTriggered( bool autoreset )
 {
     bool triggered = false;
-    if( sw_timer[sw_timer_index].triggered ) {
+    noInterrupts();
+    if( this->triggered ) {
         triggered = true;
         if( autoreset )
-            sw_timer[sw_timer_index].triggered = false;
+            this->triggered = false;
     }
+    interrupts();
     return triggered;
 }
 
+void SoftTimer::SetDowncounter( uint16_t downcounter )
+{
+    noInterrupts();
+    this->downcounter = downcounter;
+    interrupts();
+}
+
+uint16_t SoftTimer::GetDowncounter()
+{
+    uint16_t downcounter;
+    noInterrupts();
+    downcounter = this->downcounter;
+    interrupts();
+    return downcounter;
+}
+
+void SoftTimer::SetUpdateTime( uint16_t update_time)
+{
+    noInterrupts();
+    this->updatetime = update_time;
+    interrupts();
+}
+
+uint16_t SoftTimer::GetUpdateTime()
+{
+    uint16_t updatetime;
+    noInterrupts();
+    updatetime = this->updatetime;
+    interrupts();
+    return updatetime;
+}
+
+void SoftTimer::_Tick()
+{
+    if( this->active && this->downcounter ) {
+        this->downcounter--;
+        if( this->downcounter == 0 ) {
+            this->triggered = true;
+            if(this->autoupdate) {
+                this->downcounter = this->updatetime;
+            }
+        }
+    } 
+}
 
 IRAM_ATTR void time_tick500ms() {
     //Serial.println("Enter pin interrupt");
     if( digitalRead(RTC_SQW_PIN) ) {
         rtc_SecondsSinceUpdate++;
         for( int i = 0; i < SW_TIMER_MAX; i++ ) {
-            if( sw_timer[i].downcounter ) {
-                sw_timer[i].downcounter--;
-                if( sw_timer[i].downcounter == 0 ) {
-                    sw_timer[i].triggered = true;
-                    if(sw_timer[i].autoupdate) {
-                        sw_timer[i].downcounter = sw_timer[i].updatetime;
-                    }
-                }
-            }
+            swTimer[i]._Tick();
         }
     }
     //Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
@@ -119,6 +143,8 @@ void rtc_SetLocalTimeProcessed(void) {
 }
 
 void rtc_Init(void) {
+
+    rtc_InitSoftTimers();
  
     delay(100);
     if (! rtc.begin()) {
