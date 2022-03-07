@@ -26,5 +26,6 @@ void eeprom_restore_pressure_history(unsigned long time);
 void clear_log(void);
 void pressureHistory_printDumpFromEeprom();
 void config_printDumpFromEeprom();
+void UpdatePressureCollectionTimer(unsigned long time);
 
 #endif // __PRESSURE_HISTORY_H__

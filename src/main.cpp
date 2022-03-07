@@ -64,29 +64,6 @@ void setup() {
         while (1);
     }
 
-    //clear_log();
-
-    // Serial.println("Start eeprom check...");
-
-    // uint8_t bytes[5] = {0x00, 0x55, 0xAA, 0x3C, 0xFF};
-    // uint8_t testStatus = 0;
-    // for( uint8_t j = 0; j < 5; j++) {
-    //     Serial.printf("Test with 0x%02x...\r\n", bytes[j]);
-    //     for( uint16_t i = 0; i < (sizeof(config_t)+PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++ ) {
-    //         eepStatus = eeprom.write(i, bytes[j]);
-    //     }
-    //     for( uint16_t i = 0; i < (sizeof(config_t)+PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++ ) {
-    //         if( bytes[j] != eeprom.read(i) ) {
-    //             Serial.printf("Failure on address 0x%04x data 0x%02x\r\n", i, bytes[j]);
-    //             testStatus++;
-    //         }
-    //     }
-    // }
-
-    // Serial.print("EEPROM check ");
-    // if (testStatus) Serial.println("FAILED");
-    // else Serial.println("SUCCESS");
-
     // Init led display
     Serial.println("Init MAX7219...");
     display_init();
@@ -104,6 +81,8 @@ void setup() {
 
     rtc_GetDT( &rtc_dt );
     Serial.printf("RTC time: %02d:%02d:%02d\r\n", rtc_dt.hour(), rtc_dt.minute(), rtc_dt.second());
+
+    UpdatePressureCollectionTimer(rtc_dt.secondstime());
 
     if (!bmp.begin(BMP280_ADDRESS_ALT)) {
         Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
@@ -192,6 +171,7 @@ void loop() {
             uint32_t epoch_time = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
             //Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
             rtc_SetEpoch(epoch_time);
+            UpdatePressureCollectionTimer(epoch_time);
             //Serial.println("done");
         }
     } else {
