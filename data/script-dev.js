@@ -32,6 +32,28 @@ var pressure_history_data = '{\
 var last_time = -1;
 var back_color = 0;
 
+function getOffset() 
+{
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() 
+    {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+            var my_date = new Date(0); // The 0 there is the key, which sets the date to the epoch
+            var offset_min = this.responseText;
+
+            my_date.setUTCSeconds(time*1 + offset_min*60);
+            document.getElementById("corrected-time-string").innerText = my_date.toUTCString();//my_date.toISOString();
+
+            h_offset = offset_min/60;
+            m_offset = offset_min%60;
+            document.getElementById("time-offset-string").innerText = ""+h_offset+"h "+m_offset+"m";
+        }
+    };
+    xhttp.open('GET', 'getTimeOffset', true);
+    xhttp.send();
+}
+
 function getPressure() 
 {
     var xhttp = new XMLHttpRequest();
@@ -77,7 +99,7 @@ function updatePressureGraph() {
             index_data_arr.push(index);
 
             data_arr.push(p_history.history[i].value);
-            console.log("Item ["+i+"]: time="+itemHour + "h value=" + p_history.history[i].value);
+            //console.log("Item ["+i+"]: time="+itemHour + "h value=" + p_history.history[i].value);
         }
         var data = {
             labels: labels_arr,
@@ -178,7 +200,7 @@ window.onload = function() {
                         },
                         ticks:{
                             callback:function(label, index, ticks){
-                                console.log("Label:"+label+"  last_time:"+last_time+"  back_color:"+back_color);
+                                //console.log("Label:"+label+"  last_time:"+last_time+"  back_color:"+back_color);
                                 if( index == 0 ) 
                                 {
                                     back_color = 0;
@@ -205,6 +227,7 @@ window.onload = function() {
         });
         getPressure();
         setInterval( getPressure, 5000 );
+        getOffset();
     }, 500 );
 
     document.getElementById("hour_offset").value = h_offset;
@@ -231,6 +254,7 @@ var m_offset = 0;
 function setOffset() {
     h_offset = document.getElementById('hour_offset').value;
     m_offset = document.getElementById('minutes_offset').value;
+    setTimeout(getOffset, 500);
 }
 
 function getTime() {

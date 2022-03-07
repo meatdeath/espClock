@@ -621,6 +621,15 @@ void createWebServer(int webtype)
             //request->send(LittleFS, "/index-ap.html", "text/html");
             request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
         });
+
+        server.on("/getTimeOffset", HTTP_GET, [](AsyncWebServerRequest *request){
+            // if( !request->authenticate(http_username,http_password) )
+            //     return request->requestAuthentication();
+            char offset_min[10];
+            sprintf(offset_min, "%d", config_clock.hour_offset*60+config_clock.minute_offset);
+            request->send_P(200, "text/plain", offset_min);
+        });
+        
         Serial.print(".");
         server.onNotFound([](AsyncWebServerRequest *request) {
             //request->send_P(404,"text/plain", "");
