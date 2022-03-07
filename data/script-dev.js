@@ -43,8 +43,6 @@ function getPressure()
     };
     xhttp.open('GET', 'getPressure', true);
     xhttp.send();
-
-    // updatePressureGraph();
 }
 
 
@@ -59,7 +57,7 @@ function updatePressureGraph() {
         var last_item_hour = 0;
         last_time = -1;
         back_color = 0;
-        document.getElementById("pressure-text").innerText = p_history.current+"mm";
+        document.getElementById("pressure-text").innerText = p_history.current;
         for( var i = 0; i < p_history.history.length; i++) {
             var itemDate = new Date(p_history.history[i].time*1000);
             var itemHour = itemDate.getHours();
@@ -109,9 +107,9 @@ window.onload = function() {
         pressure_chart = new Chart('pressureChart', {
             type: 'line',
             data: {
-                labels: [], //labels: [" + pressureLabelsStr + "],
+                labels: [],
                 datasets: [{
-                    data: [], //data: [" + pressureValuesStr + "],
+                    data: [],
                     borderColor: 'red',
                     fill: false,
                     xAxisID: "time-axis",
@@ -145,13 +143,7 @@ window.onload = function() {
                             }
                             label_index++;
                             color_index++;
-                        } 
-                        // else {
-                        //     if( (color_index&1) == 0 ) {
-                        //         xRight = colorAxis.getPixelForTick(label_index-1);
-                        //         ctx.fillRect(xLeft, 0, xRight-xLeft, 1000);
-                        //     }
-                        // }
+                        }
                     }
                     ctx.stroke();
                     ctx.restore();
@@ -190,23 +182,10 @@ window.onload = function() {
                                 if( index == 0 ) 
                                 {
                                     back_color = 0;
-                                    if( label >= 20 || label < 8 ) 
-                                    {
-                                        back_color = 1;
-                                    }
+                                    if( label >= 20 || label < 8 ) back_color = 1;
                                 } 
-                                else if( index == (ticks.length-1) )
-                                {
-                                    back_color++;
-                                }
-                                else 
-                                {
-                                    if( last_time != -1 && (label == 8 || label == 20) ) 
-                                    {
-                                        back_color++;
-                                    }
-                                }
-
+                                else if( index == (ticks.length-1) ) back_color++;
+                                else if( last_time != -1 && (label == 8 || label == 20) ) back_color++;
                                 last_time = label;
                                 return back_color;
                             }
@@ -224,7 +203,6 @@ window.onload = function() {
                 }
             }
         });
-        //updatePressureGraph();
         getPressure();
         setInterval( getPressure, 5000 );
     }, 500 );
@@ -244,29 +222,16 @@ window.onload = function() {
         document.getElementById("corrected-time-string").innerText = my_date.toISOString();
         document.getElementById("time-offset-string").innerText = correction;
     }, 1000 );
-
 }
 
 var time = 1642561783;
-var h_offset = -5;
+var h_offset = 0;
 var m_offset = 0;
 
 function setOffset() {
     h_offset = document.getElementById('hour_offset').value;
     m_offset = document.getElementById('minutes_offset').value;
-
-    /*var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-    };
-    param='?hour_offset=' + h_offset + '&minutes_offset=' + m_offset;
-    xhttp.open('GET', '/time_offset'+param, true);
-    xhttp.send();*/
 }
-
-// const myTimeout = setTimeout (reloadPage, 5*60*1000);
-// function reloadPage() {
-//     location.reload();
-// }
 
 function getTime() {
     return Math.floor((new Date).getTime()/1000);

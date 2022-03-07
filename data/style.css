@@ -1,31 +1,13 @@
-body { padding: 8px 16px; font-family: system-ui; }
-
-#page {
-    max-width:800px;
-    margin: auto;
-}
-
-h3 {
-    background-color: #555555;
-    color: white;
-    padding:  8px;
-}
-canvas {
-    display:block;
-}
-p.time_offset_section>label {
-    display: inline-block;
-    min-width: 70px;
-}
-p.time_offset_section>input {
-    display: inline-block;
-    width: 50px;
-}
-button { padding: 8px; border: 1px solid gray; border-radius: 2px; margin-right: 5px; }
-button:hover { background-color: lightgray; }
-
-table { border-collapse: collapse; }
-td,th { padding: 0px 5px; }
-th    { background: gray; text-align: left; }
-td    { border-bottom: 1px solid lightgray; }
-td>div { text-align: center; }
+body {padding: 8px 16px; font-family: system-ui;}
+#page {max-width:800px;margin: auto;}
+h3 {background-color: #555555;color: white;padding:8px;}
+canvas {display:block;}
+p.time_offset_section>label {display: inline-block;min-width: 70px;}
+p.time_offset_section>input {display: inline-block;width: 50px;}
+button {padding: 8px; border: 1px solid gray; border-radius: 2px; margin-right: 5px;}
+button:hover {background-color: lightgray;}
+table {border-collapse: collapse;}
+td,th {padding: 0px 5px;}
+th {background: gray; text-align: left;}
+td {border-bottom: 1px solid lightgray;}
+td>div {text-align: center;}
