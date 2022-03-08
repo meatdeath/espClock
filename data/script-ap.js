@@ -14,11 +14,6 @@ function setOffset() {
     xhttp.send();
 }
 
-// const myTimeout = setTimeout (reloadPage, 5*60*1000);
-// function reloadPage() {
-//     location.reload();
-// }
-
 function getTime() 
 {
     var xhttp = new XMLHttpRequest();

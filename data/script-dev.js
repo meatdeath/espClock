@@ -29,8 +29,33 @@ var pressure_history_data = '{\
         {"time":1642815826,"value":755},\
         {"time":1642823026,"value":750}\
 ]}';
+
 var last_time = -1;
 var back_color = 0;
+var time = 1642561783;
+var h_offset = 0;
+var m_offset = 0;
+
+function getCorrectionString() {
+    return ""+h_offset+"h"+m_offset+"m";
+}
+
+function getTime() {
+    return Math.floor((new Date).getTime()/1000);
+}
+
+function getCorrectedTime() {
+    var time = Math.floor((new Date).getTime()/1000);
+    time += h_offset*60*60;
+    time += m_offset*60;
+    return time;
+}
+
+function setOffset() {
+    h_offset = document.getElementById('hour_offset').value;
+    m_offset = document.getElementById('minutes_offset').value;
+    setTimeout(getOffset, 500);
+}
 
 function getOffset() 
 {
@@ -69,6 +94,7 @@ function getPressure()
 
 
 var pressure_chart = undefined;
+
 function updatePressureGraph() {
     if( pressure_chart != undefined ) {
         var p_history = JSON.parse(pressure_history_data);
@@ -81,7 +107,7 @@ function updatePressureGraph() {
         back_color = 0;
         document.getElementById("pressure-text").innerText = p_history.current;
         for( var i = 0; i < p_history.history.length; i++) {
-            var itemDate = new Date((p_history.history[i].time + 30*60)*1000);
+            var itemDate = new Date((p_history.history[i].time + COLLECT_PRESSURE_HISTORY_PERIOD*60/2)*1000);
             var itemHour = itemDate.getHours();
             labels_arr.push(itemHour);
             if( i == 0 ) {
@@ -97,9 +123,7 @@ function updatePressureGraph() {
             }
             last_item_hour = itemHour;
             index_data_arr.push(index);
-
             data_arr.push(p_history.history[i].value);
-            //console.log("Item ["+i+"]: time="+itemHour + "h value=" + p_history.history[i].value);
         }
         var data = {
             labels: labels_arr,
@@ -200,7 +224,6 @@ window.onload = function() {
                         },
                         ticks:{
                             callback:function(label, index, ticks){
-                                //console.log("Label:"+label+"  last_time:"+last_time+"  back_color:"+back_color);
                                 if( index == 0 ) 
                                 {
                                     back_color = 0;
@@ -245,29 +268,4 @@ window.onload = function() {
         document.getElementById("corrected-time-string").innerText = my_date.toISOString();
         document.getElementById("time-offset-string").innerText = correction;
     }, 1000 );
-}
-
-var time = 1642561783;
-var h_offset = 0;
-var m_offset = 0;
-
-function setOffset() {
-    h_offset = document.getElementById('hour_offset').value;
-    m_offset = document.getElementById('minutes_offset').value;
-    setTimeout(getOffset, 500);
-}
-
-function getTime() {
-    return Math.floor((new Date).getTime()/1000);
-}
-
-function getCorrectedTime() {
-    var time = Math.floor((new Date).getTime()/1000);
-    time += h_offset*60*60;
-    time += m_offset*60;
-    return time;
-}
-
-function getCorrectionString() {
-    return ""+h_offset+"h"+m_offset+"m";
 }

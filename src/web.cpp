@@ -535,70 +535,6 @@ void createWebServer(int webtype)
             }
             request->send_P(statusCode, "application/json", content.c_str());
         });
-//         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
-//             Serial.println("Set time_offset----------------------------------------");
-
-//             Serial.println("debug 0");
-
-//             int param_n = request->params();
-            
-//             Serial.print("param N=");
-//             Serial.println(param_n);
-//             if(param_n == 0) {
-//                 request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
-//                 return;
-//             }
-
-//             AsyncWebParameter* p = request->getParam(0);
-//             Serial.print("Param name: ");
-//             Serial.println(p->name());
-
-//             Serial.print("Param value: ");
-//             Serial.println(p->value());
-
-//             long p_value = p->value().toInt();
-
-//             Serial.print("Intager value");
-//             Serial.println(p_value);
-
-//             if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
-//                 request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
-//                 return;
-//             }
-//             Serial.println("----------------------------------------");
-//             int8_t hour_offset = p_value;
-//             // EEPROM.write(96, 0);
-//             // delay(100);
-//             Serial.print("Set hour offset: ");
-//             Serial.println(hour_offset);
-
-//             //------------------------------------
-
-//             p = request->getParam(1);
-//             Serial.print("Param name: ");
-//             Serial.println(p->name());
-
-//             Serial.print("Param value: ");
-//             Serial.println(p->value());
-
-//             p_value = p->value().toInt();
-
-//             Serial.print("Intager value");
-//             Serial.println(p_value);
-
-//             if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
-//                 request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
-//                 return;
-//             }
-//             Serial.println("----------------------------------------");
-//             int8_t minutes_offset = p_value;
-//             // EEPROM.write(96, 0);
-//             // delay(100);
-//             Serial.print("Set minutes offset: ");
-//             Serial.println(minutes_offset);
-//             config_settimeoffset(hour_offset, minutes_offset);
-//             request->send_P(200, "text/plain", "OK");
-//         });
         server.on("/reset_network", HTTP_GET, [](AsyncWebServerRequest *request) {
             content = "<!DOCTYPE HTML>\r\n<html>";
             content += "<p>Clear WiFi settings done.</p><p>The board will automatically restart after 10s... After restart you can connect to AP '";
@@ -636,107 +572,7 @@ void createWebServer(int webtype)
             Serial.println("Handle not found page...");
             handleWebRequests(request);
         }); // Set server all paths are not found so we can handle as per URI 
-        /*server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-            IPAddress ip = WiFi.localIP();
-            String ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
-            String updateDateTime = (String)rtc_dt.year() + "/" + 
-                                    (String)rtc_dt.month() + "/" + 
-                                    (String)rtc_dt.day() + " " +
-                                    (String)rtc_dt.hour() + ":" + 
-                                    (String)rtc_dt.minute()+ ":" + 
-                                    (String)rtc_dt.second() ;
-        // request->send_P(200, "application/json", ("{\"IP\":\"" + ipStr + "\"}").c_str());
-            content = 
-                "<!DOCTYPE HTML>"
-                "<html>"
-                    "<script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>"
-                    "<style>"
-                        "body { padding: 8px 16px; font-family: system-ui; }"
-                        "h1 { text-align: center; }"
-                        "h3 {"
-                            "background-color: #555555;"
-                            "color: white;"
-                            "padding:  8px;"
-                            "text-align:  center;"
-                        "}"
-                        "canvas {"
-                            "display:block;"
-                        "}"
-                        "p.time_offset_section>label {"
-                            "display: inline-block;"
-                            "min-width: 70px;"
-                        "}"
-                        "p.time_offset_section>input {"
-                            "display: inline-block;"
-                            "min-width: 50px;"
-                        "}"
-                        "button {"
-                            "padding: 8px;"
-                        "}"
-                    "</style>"
-                    "<body>"
-                        "<h1>ESPClock</h1>"
-                        "<p>IP address: ";
-            content += ip.toString();
-            content += "</p>"
-                        "<h3>Pressure history</h3>"
-                        "<p>"
-                            "<canvas id='pressureChart'></canvas>"
-                        "</p>"
-                        "<h3>Time offset</h3>"
-                        "<p class='time_offset_section'>"
-                            "<label for='hour_offset'>Hours</label>"
-                            "<input type='number' id='hour_offset' name='hour_offset' value='";
-            content += ((String)config_clock.hour_offset).c_str();
-            content += "' min='-12' max='12'>"
-                        "</p>"
-                        "<p class='time_offset_section'>"
-                            "<label for='minutes_offset'>Minutes</label>"
-                            "<input type='number' id='minutes_offset' name='minutes_offset' value='";
-            content += ((String)config_clock.minute_offset).c_str();
-            content += "' min='0' max='59'>"
-                        "</p>"
-                        "<p class='time_offset_section'>"
-                            "<button onclick='setOffset(this);'>Update time offset</button>"
-                        "</p>"
-                        "<hr>"
-                        "<br>"
-                        "<a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>"
-                        "<br>"
-                        "<hr>"
-                        "<p>" + updateDateTime + "</p>"
-                    "</body>"
-                    "<script>"
-                        "new Chart('pressureChart', {"
-                            "type: 'line',"
-                            "data: {"
-                                "labels: [" + pressureLabelsStr + "],"
-                                "datasets: [{" 
-                                    "data: [" + pressureValuesStr + "],"
-                                    "borderColor: 'red',"
-                                    "fill: false"
-                                "}]"
-                            "},"
-                            "options: {"
-                            "   legend: {display: false}"
-                            "}"
-                        "});"
-                        "function setOffset() {"
-                            "var xhttp = new XMLHttpRequest();"
-                            "xhttp.onreadystatechange = function() {"
-                            "};"
-                            "param='?hour_offset=' + document.getElementById('hour_offset').value + '&minutes_offset=' + document.getElementById('minutes_offset').value;"
-                            "xhttp.open('GET', '/time_offset'+param, true);"
-                            "xhttp.send();"
-                        "}"
-                        "const myTimeout = setTimeout (reloadPage, 60*60*1000);"
-                        "function reloadPage() {"
-                            "location.reload();"
-                        "}"
-                    "</script>"
-                "</html>";
-            request->send_P(200, "text/html", content.c_str());  
-        });*/
+       
 
         server.on("/getTemperature", HTTP_GET, [](AsyncWebServerRequest *request){
             // if( !request->authenticate(http_username,http_password) )
@@ -752,62 +588,32 @@ void createWebServer(int webtype)
             request->send_P( 200, "text/plain", json_PressureHistory.c_str() );
         });
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
-            Serial.println("Set time_offset----------------------------------------");
-
-            Serial.println("debug 0");
-
             int param_n = request->params();
-            
-            Serial.print("param N=");
-            Serial.println(param_n);
             if(param_n == 0) {
-                request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
+                request->send_P(200, "text/plain", "Error. No parameters"); //TODO replace status 200
                 return;
             }
-
-            AsyncWebParameter* p = request->getParam(0);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
-
-            Serial.print("Param value: ");
-            Serial.println(p->value());
-
-            long p_value = p->value().toInt();
-
-            Serial.print("Intager value");
-            Serial.println(p_value);
-
+            AsyncWebParameter* p;
+            long p_value;
+            //------------------------------------
+            p = request->getParam(0);
+            p_value = p->value().toInt();
             if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
                 request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
                 return;
             }
-            Serial.println("----------------------------------------");
             int8_t hour_offset = p_value;
-            Serial.print("Set hour offset: ");
-            Serial.println(hour_offset);
-
+            Serial.printf("Set hour offset: %d\r\n", hour_offset);
             //------------------------------------
-
             p = request->getParam(1);
-            Serial.print("Param name: ");
-            Serial.println(p->name());
-
-            Serial.print("Param value: ");
-            Serial.println(p->value());
-
             p_value = p->value().toInt();
-
-            Serial.print("Intager value");
-            Serial.println(p_value);
-
             if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
                 request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
                 return;
             }
-            Serial.println("----------------------------------------");
             int8_t minutes_offset = p_value;
-            Serial.print("Set minutes offset: ");
-            Serial.println(minutes_offset);
+            Serial.printf("Set minutes offset: %d\r\n", minutes_offset);
+            //------------------------------------
             config_settimeoffset(hour_offset, minutes_offset);
             request->send_P(200, "text/plain", "OK");
         });
