@@ -8,6 +8,7 @@
 #include <ESPAsyncTCP.h>
 #include "ESPAsyncWebServer.h"
 #include <ESP8266HTTPClient.h>
+#include "ESP8266mDNS.h"
 
 #include <WiFiUdp.h>
 #include <Hash.h>

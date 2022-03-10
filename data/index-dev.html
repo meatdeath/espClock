@@ -1,8 +1,10 @@
 <!DOCTYPE HTML>
 <html>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>
-    <script src="script_dev.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    <head>
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>
+        <script src="script-dev.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+    </head>
     <body>
         <div id='page'>
             <h1>ESPClock</h1>
@@ -11,7 +13,8 @@
                 <canvas id='pressureChart'></canvas>
             </p>
             <div>
-                <p>Pressure: <span id='CurrentPressureValue'></span></p>
+                <p>Pressure: <span id="pressure-text">%PRESSURE%</span>mm</p>
+                <p>Temperature: <span id="temperature-text">%TEMPERATURE%</span>&#8451;</p>
             </div>
             <h3>Time correction</h3>
 
@@ -32,11 +35,15 @@
             <p>Current time offset: <span id='time-offset-string'>--/--/-- --:--:--</span></p>
 
             <hr>
-            <p>IP address: <span id="device-ip"></span></p>
+            <p>IP address: <span id="device-ip">%LOCAL_IP_ADDRESS%</span></p>
             <br>
             <a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>
             <br>
+            <br>
+            <a href='/update' class='btn btn-primary'>Firmware update</a>
+            <br>
             <hr>
+            <p style="font-size:8px; font-weight: 700;">Powered by Vladimir Novac - 2022</p>
             <!--<div>" + dbg_text + "</div>-->
         </div>
     </body>
