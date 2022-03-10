@@ -61,7 +61,7 @@ void setup() {
     if (eepStatus) {
         Serial.print(F("extEEPROM.begin() failed, status = "));
         Serial.println(eepStatus);
-        while (1);
+        //while (1);
     }
 
     // Serial.println("Start eeprom check...");
