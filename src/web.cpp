@@ -3,8 +3,12 @@
 #include "rtc.h"
 #include "pressure_history.h"
 
-#include <NTPClient.h>
+#define OTA
+
+#ifdef OTA
 #include <AsyncElegantOTA.h>
+#endif
+#include <NTPClient.h>
 #include <LittleFS.h>
 
 const byte DNS_PORT = 53;
@@ -120,7 +124,9 @@ void wifi_processing(void) {
             WifiState = STATE_WIFI_IDLE;
         }
         
+#ifdef ENABLE_MDNS
         MDNS.update();
+#endif
         /* code */
         break;
     case STATE_WIFI_AP:
@@ -141,15 +147,19 @@ void launchWeb(int webtype) {
     Serial.println(WiFi.softAPIP());
     createWebServer(webtype);
     // Start the server
+#ifdef OTA
     AsyncElegantOTA.begin(&server);    // Start ElegantOTA
+#endif
 
     server.begin();
     Serial.println("Server started"); 
 
+#ifdef ENABLE_MDNS
     Serial.print("Starting mDNS... ");
     bool mdns_result = MDNS.begin("espclock", WiFi.localIP());
     if(!mdns_result) Serial.println("FAILED !");
     else Serial.println("done");
+#endif
 }
 
 void setupAP(void) {

@@ -7,6 +7,17 @@ config_clock_t config_clock;
 
 extern extEEPROM eeprom;
 
+void eeprom_ReadBlock(unsigned long addr, uint8_t *buf, uint16_t size){
+    for( uint16_t i = 0; i < size; i++ ) {
+        buf[i] = eeprom.read(addr+i);
+    }
+}
+void eeprom_WriteBlock(unsigned long addr, uint8_t *buf, uint16_t size){
+    for( uint16_t i = 0; i < size; i++ ) {
+        eeprom.write(addr+i,buf[i]);
+    }
+}
+
 void config_validate(void);
 
 void config_printDumpFromEeprom() {
@@ -24,15 +35,9 @@ void config_init(void) {
     memset(&config_wifi, 0xFF, sizeof(config_wifi_t));
     memset(&config_auth, 0xFF, sizeof(config_auth_t));
     memset(&config_clock, 0xFF, sizeof(config_clock_t));
-    for( uint16_t i = 0; i < sizeof(config_wifi_t); i++ ) {
-        ((uint8_t*)&config_wifi)[i] = eeprom.read(EEPROM_CONFIG_WIFI_ADDR+i);
-    }
-    for( uint16_t i = 0; i < sizeof(config_auth_t); i++ ) {
-        ((uint8_t*)&config_auth)[i] = eeprom.read(EEPROM_CONFIG_AUTH_ADDR+i);
-    }
-    for( uint16_t i = 0; i < sizeof(config_clock_t); i++ ) {
-        ((uint8_t*)&config_clock)[i] = eeprom.read(EEPROM_CONFIG_CLOCK_ADDR+i);
-    }
+    eeprom_ReadBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+    eeprom_ReadBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
+    eeprom_ReadBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
     config_validate();
 }
 
@@ -44,19 +49,9 @@ int16_t config_gettimeoffset(int8_t *h_offset, int8_t *m_offset) {
 
 void config_store(void) {
     Serial.println("Store config -> EEPROM full update.");
-    uint8_t* ptr;
-
-    ptr = (uint8_t*)&config_wifi;
-    for( uint8_t i = 0; i < sizeof(config_wifi_t); i++ ) 
-        eeprom.write(EEPROM_CONFIG_WIFI_ADDR+i, ptr[i]);
-
-    ptr = (uint8_t*)&config_auth;
-    for( uint8_t i = 0; i < sizeof(config_auth_t); i++ ) 
-        eeprom.write(EEPROM_CONFIG_AUTH_ADDR+i, ptr[i]);
-
-    ptr = (uint8_t*)&config_clock;
-    for( uint8_t i = 0; i < sizeof(config_clock_t); i++ ) 
-        eeprom.write(EEPROM_CONFIG_CLOCK_ADDR+i, ptr[i]);
+    eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+    eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
+    eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
 }
 
 void config_settimeoffset(int8_t hours_offset, int8_t minutes_offset) {
@@ -65,10 +60,7 @@ void config_settimeoffset(int8_t hours_offset, int8_t minutes_offset) {
 
     Serial.printf("Set offset: addr=0x%04x data: %02x %02x\r\n", EEPROM_CONFIG_CLOCK_ADDR, (int8_t)config_clock.hour_offset, (int8_t)config_clock.minute_offset);
     
-    uint8_t *ptr = (uint8_t*)&config_clock;
-    for( uint8_t i = 0; i < sizeof(config_clock_t); i++ ) {
-        eeprom.write(EEPROM_CONFIG_CLOCK_ADDR+i, ptr[i]);
-    }
+    eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
 }
 
 void config_validate(void) {
@@ -85,9 +77,7 @@ void config_validate(void) {
             Serial.println("WiFi config is not valid");
         } else {
             config_wifi.valid_marker = VALID_CONFIG_MARKER;
-            uint8_t *ptr = (uint8_t*)&config_wifi;
-            for( uint8_t i = 0; i < sizeof(config_wifi_t); i++ ) 
-                eeprom.write(EEPROM_CONFIG_WIFI_ADDR+i, ptr[i]);
+            eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
         }
     }
 
@@ -114,9 +104,7 @@ void config_validate(void) {
         }
     }
     if( changed == true) {
-        uint8_t *ptr = (uint8_t*)&config_clock;
-        for( uint8_t i = 0; i < sizeof(config_clock_t); i++ ) 
-            eeprom.write(EEPROM_CONFIG_CLOCK_ADDR+i, ptr[i]);
+        eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
     }
 
     if( config_auth.valid_marker != VALID_CONFIG_MARKER ) 
@@ -129,9 +117,7 @@ void config_validate(void) {
             Serial.println("Auth config is not valid");
         } else {
             config_auth.valid_marker = VALID_CONFIG_MARKER;
-            uint8_t *ptr = (uint8_t*)&config_auth;
-            for( uint8_t i = 0; i < sizeof(config_auth_t); i++ ) 
-                eeprom.write(EEPROM_CONFIG_AUTH_ADDR+i, ptr[i]);
+            eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
         }
     } 
 }
@@ -140,12 +126,8 @@ void config_resetNetSettings() {
     memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
     memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
 
-    uint8_t *ptr = (uint8_t*)&config_wifi;
-    for( uint8_t i = 0; i < sizeof(config_wifi_t); i++ ) 
-        eeprom.write(EEPROM_CONFIG_WIFI_ADDR+i, ptr[i]);
-    ptr = (uint8_t*)&config_auth;
-    for( uint8_t i = 0; i < sizeof(config_auth_t); i++ )
-        eeprom.write(EEPROM_CONFIG_AUTH_ADDR+i, ptr[i]);
+    eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+    eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
 }
 
 void config_setNetSettings(String *ssid, String *ssid_pass, String *auth_username, String *auth_pass)
@@ -186,8 +168,6 @@ void config_clearwifi(void) {
 
     config_wifi.valid_marker = 0xFF;
     
-    uint8_t *ptr = (uint8_t*)&config_wifi;
-    for( uint8_t i = 0; i < sizeof(config_wifi_t); i++ ) 
-        eeprom.write(EEPROM_CONFIG_WIFI_ADDR+i, ptr[i]);
+    eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
     Serial.println("Done");
 }

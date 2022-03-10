@@ -2,13 +2,16 @@
 #define __WEB_H__
 #include <Arduino.h>
 
-#define ENABLE_DNS
+//#define ENABLE_DNS
+//#define ENABLE_MDNS
 
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include "ESPAsyncWebServer.h"
+#ifdef ENABLE_MDNS
 #include <ESP8266HTTPClient.h>
 #include "ESP8266mDNS.h"
+#endif
 
 #include <WiFiUdp.h>
 #include <Hash.h>

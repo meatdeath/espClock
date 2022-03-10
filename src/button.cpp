@@ -2,25 +2,45 @@
 
 #define BUTTON_PIN  8
 
-uint8_t button_state = BUTTON_STATE_UP;
-uint8_t button_oldState = BUTTON_STATE_UP;
-uint8_t button_event = 0;
 
-void button_init() {
-    pinMode( BUTTON_PIN, INPUT_PULLUP );
-    button_state = BUTTON_STATE_UP;
-    button_oldState = BUTTON_STATE_UP;
-    button_event = 0;
+class Button {
+    private:
+        uint8_t pin;
+        uint8_t state;
+        uint8_t old_state;
+        uint8_t event;
+    public:
+        Button(uint8_t pin);
+        void Init(uint8_t pin);
+        uint8_t GetState();
+        void UpdateTick();
+};
+
+Button::Button(uint8_t pin) {
+    pinMode( pin, INPUT_PULLUP );
+    pin = pin;
+    state = BUTTON_STATE_UP;
+    old_state = BUTTON_STATE_UP;
+    event = 0;
 }
 
-uint8_t button_getState() {
-    return button_state;
+void Button::Init(uint8_t pin) {
+    pinMode( pin, INPUT_PULLUP );
+    pin = pin;
+    state = BUTTON_STATE_UP;
+    old_state = BUTTON_STATE_UP;
+    event = 0;
 }
 
-void button_updateTick() {
-    button_oldState = button_state;
-    button_state = digitalRead(BUTTON_PIN);
-    if( button_state == BUTTON_STATE_DOWN && button_oldState == BUTTON_STATE_UP ) {
-        button_event |= BUTTON_EVENT_PRESSED;
+uint8_t Button::GetState() {
+    return state;
+}
+
+void Button::UpdateTick() {
+    old_state = state;
+    state = digitalRead(pin);
+    if( state == BUTTON_STATE_DOWN && old_state == BUTTON_STATE_UP ) {
+        event |= BUTTON_EVENT_PRESSED;
+
     }
 }
