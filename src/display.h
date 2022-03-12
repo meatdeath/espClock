@@ -95,11 +95,11 @@ enum __display_symbols {
 #define TEMPERATURE_SHOW_TIME   3
 #define PRESSURE_SHOW_TIME      3
 
-void display_init( void );
-void display_printstarting(void);
-void display_printtime( byte hours, byte minutes, byte seconds, byte format );
-void display_intensity(byte intensity);
-void display_brightness(uint8_t percentage);
+void display_Init( void );
+void display_PrintStarting(void);
+void display_Time( byte hours, byte minutes, byte seconds, byte format );
+void display_SetIntensity(byte intensity);
+void display_SetBrightness(uint8_t percentage);
 
 void display_Temperature(int temperature);
 void display_Pressure(uint16_t pressure);

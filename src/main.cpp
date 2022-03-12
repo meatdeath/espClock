@@ -66,11 +66,11 @@ void setup() {
 
     // Init led display
     Serial.println("Init MAX7219...");
-    display_init();
-    display_brightness(20);
+    display_Init();
+    display_SetBrightness(20);
 
     // Print loading on led screen
-    display_printstarting();
+    display_PrintStarting();
 
     // load config
     config_init();
@@ -202,7 +202,7 @@ void loop() {
         } else if( intensity < measured_intensity ) {
             intensity++;
         }
-        display_intensity(16-intensity);
+        display_SetIntensity(16-intensity);
     }
 
     if( swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].IsTriggered(true) && pressure != 0 ) {
@@ -244,7 +244,7 @@ void loop() {
                     hours = dt.hour();
                     minutes = dt.minute();
                 }
-                display_printtime( hours, minutes, digitalRead(RTC_SQW_PIN), DISPLAY_FORMAT_24H );
+                display_Time( hours, minutes, digitalRead(RTC_SQW_PIN), DISPLAY_FORMAT_24H );
                 rtc_SetLocalTimeProcessed();
                 last_shown_display = DISPLAY_CLOCK;
             }
