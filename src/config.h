@@ -39,10 +39,8 @@ extern config_auth_t config_auth;
 extern config_clock_t config_clock;
 
 void config_init(void);
-int16_t config_gettimeoffset(int8_t *h_offset, int8_t *m_offset);
-void config_settimeoffset(int8_t h_offset, int8_t m_offset);
-void config_setNetSettings(String *ssid, String *ssid_pass, String *auth_username, String *auth_pass);
-void config_clearwifi(void);
-void config_resetNetSettings();
+bool config_SetTimeSettings(int8_t h_offset, int8_t m_offset);
+void config_setWiFiSettings(String ssid, String pass);
+void config_setAuthSettings(String user, String pass);
 
 #endif // __CONFIG_H__

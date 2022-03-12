@@ -101,7 +101,7 @@ void display_printtime( byte hours, byte minutes, byte seconds, byte format );
 void display_intensity(byte intensity);
 void display_brightness(uint8_t percentage);
 
-void display_printtemperature(int temperature);
-void display_printpressure(uint16_t pressure);
+void display_Temperature(int temperature);
+void display_Pressure(uint16_t pressure);
 
 #endif // __DISPLAY_H__

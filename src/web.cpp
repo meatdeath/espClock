@@ -365,6 +365,15 @@ void handleWebRequests(AsyncWebServerRequest *request){
     request->send(404, "text/plain", message);
 }
 
+bool GetParamValue(AsyncWebServerRequest *request, const String& name, String& value) {
+    if(request->hasParam(name)) {
+        AsyncWebParameter* p = request->getParam(name);
+        value = p->value();
+        return true;
+    }
+    return false;
+}
+
 void createWebServer(int webtype)
 {
     if( webtype == WEB_PAGES_FOR_AP ) 
@@ -471,77 +480,40 @@ void createWebServer(int webtype)
             int8_t minutes_offset = p_value;
             Serial.print("Set minutes offset: ");
             Serial.println(minutes_offset);
-            config_settimeoffset(hour_offset, minutes_offset);
+            config_SetTimeSettings(hour_offset, minutes_offset);
             request->send_P(200, "text/plain", "OK");
         });
 
         server.on("/setting", HTTP_GET, [](AsyncWebServerRequest *request) {
             Serial.println("Store network params...");
-            AsyncWebParameter *p;
-            if(!request->hasParam("ssid")) return;
-            if(!request->hasParam("pass")) return;
-            if(!request->hasParam("auth-username")) return;
-            if(!request->hasParam("auth-pass")) return;
-            
-            // wifi ssid
-            Serial.println("Get wifi ssid...");
-            p = request->getParam(0);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "ssid") return;
-            String qsid = p->value();
-            
-            // wifi password
-            Serial.println("Get wifi password");
-            p = request->getParam(1);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "pass") return;
-            String qpass = p->value();
-            
-            // auth username
-            Serial.println("Get auth username");
-            p = request->getParam(2);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "auth-username") return;
-            String auth_username = p->value();
-            
-            // auth password
-            Serial.println("Get auth password");
-            p = request->getParam(3);
-            Serial.print(p->name());
-            Serial.print(" : ");
-            Serial.println(p->value());
-
-            if(p->name() != "auth-pass") return;
-            String auth_pass = p->value();
-
-
-            Serial.println("Validate wifi ssid");
-            if ( qsid.length() > 0 ) 
-            {
-                Serial.printf("Save network settings: \"%s\", \"%s\", \"%s\", \"%s\"\r\n", 
-                    qsid.c_str(),
-                    qpass.c_str(),
-                    auth_username.c_str(),
-                    auth_pass.c_str());
-                config_setNetSettings(&qsid, &qpass, &auth_username, &auth_pass);
-                content = "{\"Success\":\"saved to eeprom... reset to boot into new wifi\"}";
+            String param1, param2;
+            bool param_saved = false;
+            if( GetParamValue(request,"ssid",param1) && GetParamValue(request,"pass",param1) ) {
+                if( param1.length() > 0 ) 
+                {
+                    Serial.printf(
+                        "Save WiFi network settings: SSID:%s, Pass:%s\r\n", 
+                        param1.c_str(),
+                        param2.c_str() );
+                    config_setWiFiSettings(param1, param2);
+                    param_saved = true;
+                }
+            }
+            if( GetParamValue(request,"auth-username",param1) && GetParamValue(request,"auth-pass",param1) ) {
+                if( param1.length() > 0 && param2.length() > 0 ) 
+                {
+                    Serial.printf(
+                        "Save Auth settings: username:%s, pass:%s\r\n", 
+                        param1.c_str(),
+                        param2.c_str() );
+                    config_setAuthSettings(param1, param2);
+                    param_saved = true;
+                }
+            }
+            if( param_saved ){
                 statusCode = 200;
-                softreset = true;
-            } 
-            else 
-            {
-                content = "{\"Error\":\"404 not found\"}";
-                statusCode = 404;
-                Serial.println("Sending 404");
+            } else {
+                statusCode = 500;
             }
             request->send_P(statusCode, "application/json", content.c_str());
         });
@@ -553,7 +525,8 @@ void createWebServer(int webtype)
             content += apIP.toString();
             content += "'.</p></html>";
             request->send_P(200, "text/html", content.c_str());
-            config_resetNetSettings();
+            config_setWiFiSettings("","");
+            config_setAuthSettings("","");
             softreset = true;
         });
     } 
@@ -598,33 +571,14 @@ void createWebServer(int webtype)
             request->send_P( 200, "text/plain", json_PressureHistory.c_str() );
         });
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
-            int param_n = request->params();
-            if(param_n == 0) {
-                request->send_P(200, "text/plain", "Error. No parameters"); //TODO replace status 200
-                return;
+            String param1, param2;
+            if( GetParamValue(request, "hour_offset", param1) && GetParamValue(request, "minute_offset",param2)){
+                Serial.printf("Set time offset: %02ld:%02ld\r\n",param1.toInt(), param2.toInt());
+                if( !config_SetTimeSettings(param1.toInt(), param2.toInt()) ){
+                    request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
+                    return;
+                }
             }
-            AsyncWebParameter* p;
-            long p_value;
-            //------------------------------------
-            p = request->getParam(0);
-            p_value = p->value().toInt();
-            if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
-                return;
-            }
-            int8_t hour_offset = p_value;
-            Serial.printf("Set hour offset: %d\r\n", hour_offset);
-            //------------------------------------
-            p = request->getParam(1);
-            p_value = p->value().toInt();
-            if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
-                return;
-            }
-            int8_t minutes_offset = p_value;
-            Serial.printf("Set minutes offset: %d\r\n", minutes_offset);
-            //------------------------------------
-            config_settimeoffset(hour_offset, minutes_offset);
             request->send_P(200, "text/plain", "OK");
         });
         server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -635,7 +589,7 @@ void createWebServer(int webtype)
             content += apIP.toString();
             content += "'.</p></html>";
             request->send_P(200, "text/html", content.c_str());
-            config_clearwifi();
+            config_setWiFiSettings("","");
             softreset = true;
         });
     }

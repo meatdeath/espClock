@@ -251,12 +251,12 @@ void loop() {
             break;
         case DISPLAY_TEMPERATURE:
             if(last_shown_display != DISPLAY_TEMPERATURE)
-                display_printtemperature((int)temperature);
+                display_Temperature((int)temperature);
             last_shown_display = DISPLAY_TEMPERATURE;
             break;
         case DISPLAY_PRESSURE:
             if(last_shown_display != DISPLAY_PRESSURE)
-                display_printpressure((uint16_t)(pressure+.5));
+                display_Pressure((uint16_t)(pressure+.5));
             last_shown_display = DISPLAY_PRESSURE;
             break;
     }
@@ -285,6 +285,13 @@ void loop() {
     delay(1);
 }
 
+//---------------------------------------------------------
+
+//LedMatrix.h
+// void setTextOffset(byte offset);
+// void Rotate90();
+
+//LedMatrix.cpp
 // void LedMatrix::Rotate90() {
 //     for( byte device = 0; device < myNumberOfDevices; device++ ) {
 //         byte result[8] = {0};
@@ -305,7 +312,6 @@ void loop() {
 //     }
 // }
 
-
 // void LedMatrix::setTextOffset(byte offset) {
 //     myTextOffset = (myTextOffset-offset) % ((int)myText.length() * myCharWidth + myNumberOfDevices * 8);
 //     if (myTextOffset == 0 && myNextText.length() > 0) {
@@ -315,8 +321,15 @@ void loop() {
 //     }
 // }
 
+//----------------------------------------------------------
 
+//NTPClient.h
+// unsigned long NTPClient::getRawEpochTime() {
+
+//NTPClient.cpp
 // unsigned long NTPClient::getRawEpochTime() {
 //   return this->_timeOffset + // User offset
 //          this->_currentEpoc; // Epoc returned by the NTP server
 // }
+
+//----------------------------------------------------------

@@ -41,12 +41,6 @@ void config_init(void) {
     config_validate();
 }
 
-int16_t config_gettimeoffset(int8_t *h_offset, int8_t *m_offset) {
-    if(h_offset)    *h_offset = config_clock.hour_offset;
-    if(m_offset)    *m_offset = config_clock.minute_offset;
-    return config_clock.hour_offset*60 + config_clock.minute_offset;
-}
-
 void config_store(void) {
     Serial.println("Store config -> EEPROM full update.");
     eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
@@ -54,13 +48,17 @@ void config_store(void) {
     eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
 }
 
-void config_settimeoffset(int8_t hours_offset, int8_t minutes_offset) {
+bool config_SetTimeSettings(int8_t hours_offset, int8_t minutes_offset) {
+    if( hours_offset < (-12) || hours_offset > 12 || 
+        minutes_offset < 0 || minutes_offset > 59 ) {
+            return false;
+    }
     config_clock.hour_offset = hours_offset;
     config_clock.minute_offset = minutes_offset;
 
-    Serial.printf("Set offset: addr=0x%04x data: %02x %02x\r\n", EEPROM_CONFIG_CLOCK_ADDR, (int8_t)config_clock.hour_offset, (int8_t)config_clock.minute_offset);
-    
     eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
+
+    return true;
 }
 
 void config_validate(void) {
@@ -122,52 +120,71 @@ void config_validate(void) {
     } 
 }
 
-void config_resetNetSettings() {
-    memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
-    memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
 
-    eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
-    eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
+void config_setWiFiSettings(String ssid, String pass){
+    if(ssid == ""){
+        memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
+        eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+    } else {
+        memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
+        strcpy( config_wifi.name, ssid.c_str() );
+        strcpy( config_wifi.password, pass.c_str() );
+        config_validate();
+        Serial.printf("Set WiFi config:\r\nSSID:%s Pass:%s\r\n", 
+            config_wifi.name, 
+            config_wifi.password);
+    }
+}
+void config_setAuthSettings(String user, String pass){
+    if(user == ""){
+        memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
+        eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
+    } else {
+        memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
+        strcpy( config_auth.username, user.c_str() );
+        strcpy( config_auth.password, pass.c_str() );
+        config_validate();
+        Serial.printf("Set auth config:\r\nUser:%s Pass:%s\r\n",
+            config_auth.username,
+            config_auth.password);
+    }
 }
 
-void config_setNetSettings(String *ssid, String *ssid_pass, String *auth_username, String *auth_pass)
-{
-    memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
-    strcpy( config_wifi.name, ssid->c_str() );
-    strcpy( config_wifi.password, ssid_pass->c_str() );
+// void config_resetNetSettings() {
+//     memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
+//     memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
 
-    memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
-    strcpy( config_auth.username, auth_username->c_str() );
-    strcpy( config_auth.password, auth_pass->c_str() );
+//     eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+//     eeprom_WriteBlock(EEPROM_CONFIG_AUTH_ADDR, (uint8_t*)&config_auth, sizeof(config_auth_t));
+// }
 
-    config_validate();
+// void config_setNetSettings(String *ssid, String *ssid_pass, String *auth_username, String *auth_pass)
+// {
+//     memset( (uint8_t*)&config_wifi, 0xFF, sizeof(config_wifi_t) );
+//     strcpy( config_wifi.name, ssid->c_str() );
+//     strcpy( config_wifi.password, ssid_pass->c_str() );
 
-    Serial.println("Set wifi config:");
-    Serial.println(config_wifi.name);
-    Serial.println(config_wifi.password);
-    Serial.println("");
+//     memset( (uint8_t*)&config_auth, 0xFF, sizeof(config_auth_t) );
+//     strcpy( config_auth.username, auth_username->c_str() );
+//     strcpy( config_auth.password, auth_pass->c_str() );
 
-    Serial.println("Set auth config:");
-    Serial.println(config_auth.username);
-    Serial.println(config_auth.password);
-    Serial.println("");
+//     config_validate();
 
-    // uint8_t *ptr = (uint8_t*)&config_wifi;
-    // for( uint8_t i = 0; i < sizeof(config_wifi_t); i++ ) 
-    //     eeprom.write(EEPROM_CONFIG_WIFI_ADDR+i, ptr[i]);
-    // ptr = (uint8_t*)&config_auth;
-    // for( uint8_t i = 0; i < sizeof(config_auth_t); i++ )
-    //     eeprom.write(EEPROM_CONFIG_AUTH_ADDR+i, ptr[i]);
-}
+//     Serial.println("Set wifi config:");
+//     Serial.println(config_wifi.name);
+//     Serial.println(config_wifi.password);
+//     Serial.println("");
+//     Serial.println("Set auth config:");
+//     Serial.println(config_auth.username);
+//     Serial.println(config_auth.password);
+//     Serial.println("");
+// }
 
-void config_clearwifi(void) {
-    Serial.print("Clearing wifi settings... ");
-    
-    memset( config_wifi.name, 0xff, sizeof(config_wifi.name) );
-    memset( config_wifi.password, 0xff, sizeof(config_wifi.password) );
-
-    config_wifi.valid_marker = 0xFF;
-    
-    eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
-    Serial.println("Done");
-}
+// void config_clearwifi(void) {
+//     Serial.print("Clearing wifi settings... ");
+//     memset( config_wifi.name, 0xff, sizeof(config_wifi.name) );
+//     memset( config_wifi.password, 0xff, sizeof(config_wifi.password) );
+//     config_wifi.valid_marker = 0xFF;
+//     eeprom_WriteBlock(EEPROM_CONFIG_WIFI_ADDR, (uint8_t*)&config_wifi, sizeof(config_wifi_t));
+//     Serial.println("Done");
+// }
