@@ -107,27 +107,17 @@ void wifi_processing(void) {
                 counter = 0;
             }
             counter++;
-            //delay(1);
-            // TODO: if timeout then setup AP
-            // if()
-            // {
-            //     Serial.println("WiFi connection wasn't established. Switch to AP.");
-            //     time_sync_with_ntp_enabled = false;
-            //     setupAP();
-            // }
-
         }
         break;
     case STATE_WIFI_CONNECTED:
         if (WiFi.status() != WL_CONNECTED) {
             WiFi.disconnect();
             WifiState = STATE_WIFI_IDLE;
-        }
-        
+        } else {
 #ifdef ENABLE_MDNS
-        MDNS.update();
-#endif
-        /* code */
+            MDNS.update();
+#endif // ENABLE_MDNS
+        }
         break;
     case STATE_WIFI_AP:
         /* code */
@@ -166,16 +156,16 @@ void setupAP(void) {
     WiFi.mode(WIFI_AP);
     WiFi.disconnect();
     delay(100);
+    Serial.println("Scan WiFi network... ");
     int n = WiFi.scanNetworks();
     
-    Serial.println("scan done");
+    Serial.println("done");
     if (n == 0)
-        Serial.println("no networks found");
+        Serial.println("No networks found");
     else
     {
         uint8_t i;
-        Serial.print(n);
-        Serial.println(" networks found");
+        Serial.printf("Found %d networks.\r\n", n);
         ap_list_num = 0;
         for (int ap_index = 0; ap_index < n && ap_list_num < AP_LIST_MAX; ap_list_num++, ap_index++)
         {
@@ -278,11 +268,11 @@ void setupAP(void) {
     // WiFi.softAP(ssid, passphrase, 6);
     // Serial.println("softap");
     launchWeb(WEB_PAGES_FOR_AP);
-    Serial.println("over");
+    Serial.println("Access Point started.");
 }
 
 String processor(const String& var){
-    Serial.print("processor: ");
+    Serial.print("Web processing: ");
     Serial.println(var);
     if (var == "PRESSURE_HISTORY_TABLE") {
         return html_PressureHistory;
@@ -348,7 +338,7 @@ bool loadFromLittleFS(AsyncWebServerRequest *request){
 void handleWebRequests(AsyncWebServerRequest *request){
     Serial.print("WEB request url: ");
     Serial.println(request->url());
-    if(loadFromLittleFS(request)) return;
+    if( loadFromLittleFS(request) ) return;
     String message = "File Not Detected\n\n";
     message += "URI: ";
     message += request->url();
@@ -382,12 +372,10 @@ void createWebServer(int webtype)
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 
             Serial.println("Accessing root page...");
-            //request->send(LittleFS, "/index-ap.html", "text/html");
             request->send(LittleFS, "/index-ap.html", "text/html", false, processor);
         });
         Serial.print(".");
         server.onNotFound([](AsyncWebServerRequest *request) {
-            //request->send_P(404,"text/plain", "");
             Serial.println("Handle not found page...");
             handleWebRequests(request);
         }); // Set server all paths are not found so we can handle as per URI 
@@ -397,7 +385,6 @@ void createWebServer(int webtype)
             //     return request->requestAuthentication();
             char time_s[15];
             sprintf(time_s, "%lld", (long long)rtc_dt.secondstime()+RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate);
-            // Serial.printf("Web request getTime: %s\r\n", time_s);
             request->send_P(200, "text/plain", time_s);
         });
 
@@ -427,7 +414,6 @@ void createWebServer(int webtype)
 
         server.on("/set_time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             Serial.println("Set time_offset----------------------------------------");
-
             int param_n = request->params();
             
             Serial.print("param N=");
