@@ -12,11 +12,10 @@ uint16_t pressure_history_end = 0;
 
 String pressureLabelsStr;
 String pressureValuesStr;
-String json_PressureHistory;
-String html_PressureHistory;
+String pressure_json_history;
+String pressure_html_history;
 
 extern extEEPROM eeprom;
-extern uint8_t eepStatus;
 extern float pressure;
 
 pressure_history_t pressure_history_item[PRESSURE_HISTORY_SIZE] = {0};
@@ -36,34 +35,34 @@ void pressureHistory_printDumpFromEeprom() {
 void generate_pressure_history(void) {
     pressureLabelsStr = "";
     pressureValuesStr = "";
-    html_PressureHistory = "";
+    pressure_html_history = "";
 
     //Serial.println("----- Pressure history -----");
-    json_PressureHistory = "{\"current\":";
-    json_PressureHistory += pressure;
-    json_PressureHistory += ",\"history\":[";
+    pressure_json_history = "{\"current\":";
+    pressure_json_history += pressure;
+    pressure_json_history += ",\"history\":[";
     uint16_t time = pressure_history_size-1;
     uint16_t i = pressure_history_start;
     for(uint16_t j = 0; j < pressure_history_size; j++ )
     {
         // Serial.printf("   [%d] time:%lu   pressure:%3.1f\r\n", i, pressure_history_item[i].time, pressure_history_item[i].pressure);
         if( i != pressure_history_start ) 
-            json_PressureHistory += ",";
-        json_PressureHistory += "{\"time\":";
-        json_PressureHistory += pressure_history_item[i].time;
-        json_PressureHistory += ",\"value\":";
+            pressure_json_history += ",";
+        pressure_json_history += "{\"time\":";
+        pressure_json_history += pressure_history_item[i].time;
+        pressure_json_history += ",\"value\":";
         if( pressure_history_item[i].pressure == 800 ) {
-            json_PressureHistory += "null";
+            pressure_json_history += "null";
         } else {
-            json_PressureHistory += pressure_history_item[i].pressure;
+            pressure_json_history += pressure_history_item[i].pressure;
         }
-        json_PressureHistory += "}";
+        pressure_json_history += "}";
 
         uint32_t time_sec = pressure_history_item[i].time + config_clock.hour_offset*3600 + config_clock.minute_offset*60;
         uint8_t hour = (time_sec/3600 ) % 24;
         uint8_t minute = (time_sec/60) % 60;
-        html_PressureHistory += (String)"<tr><td>" + hour + (String)"h " + minute + (String)"min</td>";
-        html_PressureHistory += (String)"<td>" + pressure_history_item[i].pressure + (String)"mmm</td></tr>";
+        pressure_html_history += (String)"<tr><td>" + hour + (String)"h " + minute + (String)"min</td>";
+        pressure_html_history += (String)"<td>" + pressure_history_item[i].pressure + (String)"mmm</td></tr>";
         pressureLabelsStr += "\"";
         if((time&1) == 0) {
             pressureLabelsStr += time*2;
@@ -90,7 +89,7 @@ void generate_pressure_history(void) {
         time--;
     }
 
-    json_PressureHistory += "]}";
+    pressure_json_history += "]}";
     //Serial.println("----------------------------");
 }
 
@@ -104,8 +103,7 @@ void eeprom_add_history_item( unsigned long time, float pressure ) {
     uint8_t *ptr = (uint8_t*)&(pressure_history_item[pressure_history_end]);
     for( uint16_t i = 0; i < EEPROM_HISTORY_ITEM_SIZE; i++ ) 
         eeprom.write(addr+i, ptr[i]);
-    //eepStatus = eeprom.write( addr, (uint8_t*)&pressure_history_item[pressure_history_end], EEPROM_HISTORY_ITEM_SIZE );
-    Serial.printf("EEPROM status: %d\r\n", eepStatus);
+
     if( pressure_history_size == PRESSURE_HISTORY_SIZE ) {
         pressure_history_start++;
     } else {
@@ -129,6 +127,7 @@ void eeprom_restore_pressure_history(unsigned long time) {
     Serial.printf("Restore history time: 0x%08lx / %lu\r\n", time, time);
 
     Serial.println("Read history from EEPROM");
+    uint8_t eepStatus;
     for( int i = 0; i < PRESSURE_HISTORY_SIZE; i++ ) {
         eepStatus = eeprom.read( EEPROM_HISTORY_ADDR + i*EEPROM_HISTORY_ITEM_SIZE, 
                                 (uint8_t*)(&pressure_history_item[i]), 
@@ -215,14 +214,6 @@ pressureHistory_printDumpFromEeprom();
     for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++) {
         eepStatus = eeprom.write( EEPROM_HISTORY_ADDR+i, ((uint8_t*)pressure_history_item)[i] );
     }
-
-    // byte *ptr = (uint8_t*)(&pressure_history_item[0]);
-    // for(int i = 0; i < PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE; i++ ) {
-    //     if( (i%EEPROM_HISTORY_ITEM_SIZE) == 0 ) 
-    //         Serial.printf("\r\n  [%d] : ", i);
-    //     Serial.printf("%02x ",ptr[i]);
-    // }
-    // Serial.println();
 
     // Add holes
     Serial.println("4. Add holes");

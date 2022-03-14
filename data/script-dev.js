@@ -107,7 +107,7 @@ function updatePressureGraph() {
         back_color = 0;
         document.getElementById("pressure-text").innerText = p_history.current;
         for( var i = 0; i < p_history.history.length; i++) {
-            var itemDate = new Date((p_history.history[i].time + (30*60)/2)*1000);
+            var itemDate = new Date((p_history.history[i].time + (30*60))*1000);
             var itemHour = itemDate.getHours();
             labels_arr.push(itemHour);
             if( i == 0 ) {

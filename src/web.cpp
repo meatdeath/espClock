@@ -11,7 +11,6 @@
 #include <NTPClient.h>
 #include <LittleFS.h>
 
-const byte DNS_PORT = 53;
 extern volatile bool softreset;
 
 IPAddress apIP(192,168,1,1);
@@ -20,6 +19,7 @@ IPAddress subnet(255,255,255,0);
 
 #ifdef ENABLE_DNS
 AsyncDNSServer dnsServer;
+const byte DNS_PORT = 53;
 #endif
 
 
@@ -275,7 +275,7 @@ String processor(const String& var){
     Serial.print("Web processing: ");
     Serial.println(var);
     if (var == "PRESSURE_HISTORY_TABLE") {
-        return html_PressureHistory;
+        return pressure_html_history;
     }
     else if (var == "AP_LIST") {
         return htmlRadio_NetworksList;
@@ -554,7 +554,7 @@ void createWebServer(int webtype)
         server.on("/getPressure", HTTP_GET, [](AsyncWebServerRequest *request){
             // if( !request->authenticate(http_username,http_password) )
             //     return request->requestAuthentication();
-            request->send_P( 200, "text/plain", json_PressureHistory.c_str() );
+            request->send_P( 200, "text/plain", pressure_json_history.c_str() );
         });
         server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             String param1, param2;

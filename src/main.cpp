@@ -16,7 +16,7 @@
 
 
 extEEPROM eeprom(kbits_32, 1, 64, 0x57);         //device size, number of devices, page size
-uint8_t eepStatus;
+
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
@@ -56,6 +56,7 @@ void setup() {
 
     //-----------
 
+    uint8_t eepStatus;
     Serial.println("Init EEPROM...");
     eepStatus = eeprom.begin(eeprom.twiClock400kHz);
     if (eepStatus) {
@@ -144,6 +145,7 @@ uint8_t measured_intensity = 1;
 
 void loop() {
     int ambianceValue = 0;  // value abiance read from the port
+    unsigned long time = 0;
     wifi_processing();
 
     if(softreset==true) {
@@ -160,16 +162,40 @@ void loop() {
     if(time_sync_with_ntp_enabled) {
         if( swTimer[SW_TIMER_NTP_TIME_UPDATE].IsTriggered(true) ) // It's time to update from time server
         {
-            //Serial.println("It's time to update from time server");
             if( timeClient.forceUpdate() )
             {
-                //Serial.printf("Local time updated from NTP with %lus.\r\n", timeClient.getRawEpochTime());
-                rtc_SecondsSinceUpdate = 0;
+                static uint16_t read_time_lock_count = 0;
+                static uint16_t read_time_unlock_count = 0;
+                if( read_time_lock_count < 100 ) {
+                    if( read_time_lock_count > 0 ) {
+                        if( (time+rtc_SecondsSinceUpdate+30) < timeClient.getRawEpochTime() ||
+                            (time+rtc_SecondsSinceUpdate-30) > timeClient.getRawEpochTime() ) {
+                                read_time_lock_count = 0;
+                        }
+                    }
+                    time = timeClient.getRawEpochTime();
+                    read_time_lock_count++;
+                    rtc_SecondsSinceUpdate = 0;
+                } else {
+                    if( (time+rtc_SecondsSinceUpdate+30) < timeClient.getRawEpochTime() ||
+                        (time+rtc_SecondsSinceUpdate-30) > timeClient.getRawEpochTime() ) {
+                            read_time_unlock_count++;
+                            if( read_time_unlock_count == 100 ) {
+                                read_time_lock_count = 0;
+                                read_time_unlock_count = 0;
+                            }
+                    } else {
+                        time = timeClient.getRawEpochTime();
+                        read_time_unlock_count = 0;
+                        rtc_SecondsSinceUpdate = 0;
+                    }
+                }
             }
         }
         if( swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true) ) {
-            uint32_t epoch_time = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
+            uint32_t epoch_time = /*timeClient.getRawEpochTime()*/ time + rtc_SecondsSinceUpdate;
             //Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
+
             rtc_SetEpoch(epoch_time);
             UpdatePressureCollectionTimer(epoch_time);
             //Serial.println("done");
@@ -210,7 +236,7 @@ void loop() {
         Serial.print("Time to collect pressure history: ");
         if(time_sync_with_ntp_enabled) 
         {
-            timeinsec = timeClient.getRawEpochTime() + rtc_SecondsSinceUpdate;
+            timeinsec = /*timeClient.getRawEpochTime()*/ time + rtc_SecondsSinceUpdate;
             Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
         } 
         else 
@@ -231,7 +257,7 @@ void loop() {
                 int8_t minutes = 0;
                 //int8_t seconds = 0;
                 if(time_sync_with_ntp_enabled) {
-                    unsigned long time = timeClient.getRawEpochTime() + config_clock.hour_offset*3600 + config_clock.minute_offset*60 + rtc_SecondsSinceUpdate;
+                    unsigned long time = /*timeClient.getRawEpochTime()*/ time + config_clock.hour_offset*3600 + config_clock.minute_offset*60 + rtc_SecondsSinceUpdate;
                     hours = (time % 86400L) / 3600;
                     minutes = (time % 3600) / 60;
                     //seconds = time % 60;

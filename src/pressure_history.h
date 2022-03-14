@@ -15,8 +15,8 @@ typedef struct pressure_history_st {
 #define EEPROM_HISTORY_ADDR         (EEPROM_CONFIG_CLOCK_ADDR+EEPROM_CONFIG_CLOCK_SIZE)
 #define EEPROM_HISTORY_ITEM_SIZE    sizeof(pressure_history_t)
 
-extern String json_PressureHistory;
-extern String html_PressureHistory;
+extern String pressure_json_history;
+extern String pressure_html_history;
 extern String pressureLabelsStr;
 extern String pressureValuesStr;
 
