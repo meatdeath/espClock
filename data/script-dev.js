@@ -52,9 +52,19 @@ function getCorrectedTime() {
 }
 
 function setOffset() {
-    h_offset = document.getElementById('hour_offset').value;
-    m_offset = document.getElementById('minutes_offset').value;
-    setTimeout(getOffset, 500);
+    var h = document.getElementById('hour_offset').value;
+    var m = m_offset = document.getElementById('minute_offset').value;
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+            h_offset = document.getElementById('hour_offset').value;
+            m_offset = document.getElementById('minute_offset').value;
+        }
+    };
+    param='?hour_offset=' + h_offset + '&minute_offset=' + m_offset;
+    xhttp.open('GET', '/set_time_offset'+param, true);
+    xhttp.send();
 }
 
 function getOffset() 
@@ -263,7 +273,7 @@ window.onload = function() {
     }, 500 );
 
     document.getElementById("hour_offset").value = h_offset;
-    document.getElementById("minutes_offset").value = m_offset;
+    document.getElementById("minute_offset").value = m_offset;
 
     setInterval( function() {
         var utc_time = getTime();

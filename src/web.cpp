@@ -34,6 +34,7 @@ const char* passphrase = "1290test$#A";
 //extern WiFiUDP ntpUDP;
 extern NTPClient timeClient;
 extern bool time_sync_with_ntp_enabled;
+extern bool time_in_sync_with_ntp;
 
 extern float temperature;
 extern float pressure;
@@ -89,6 +90,7 @@ void wifi_processing(void) {
             Serial.println("EEPROM doesn't contain WiFi connection information.");
             Serial.println("Switch to AP mode immediately.");
             time_sync_with_ntp_enabled = false;
+            time_in_sync_with_ntp = false;
             setupAP();
             WifiState = STATE_WIFI_AP;
         }
@@ -113,6 +115,8 @@ void wifi_processing(void) {
         if (WiFi.status() != WL_CONNECTED) {
             WiFi.disconnect();
             WifiState = STATE_WIFI_IDLE;
+            time_sync_with_ntp_enabled = false;
+            time_in_sync_with_ntp = false;
         } else {
 #ifdef ENABLE_MDNS
             MDNS.update();
@@ -288,10 +292,10 @@ String processor(const String& var){
         IPAddress ip = WiFi.localIP();
         return ip.toString();
     }
-    else if (var == "HOURS_OFFSET"){
+    else if (var == "HOUR_OFFSET"){
         return String(config_clock.hour_offset);
     }
-    else if (var == "MINUTES_OFFSET"){
+    else if (var == "MINUTE_OFFSET"){
         return String(config_clock.minute_offset);
     }
     else if (var == "TEMPERATURE"){
@@ -355,12 +359,17 @@ void handleWebRequests(AsyncWebServerRequest *request){
     request->send(404, "text/plain", message);
 }
 
-bool GetParamValue(AsyncWebServerRequest *request, const String& name, String& value) {
+bool GetParamValue(AsyncWebServerRequest *request, const char *name, String& value) {
+    Serial.print("GetParaValue: ");
+    Serial.println(name);
+
     if(request->hasParam(name)) {
-        AsyncWebParameter* p = request->getParam(name);
-        value = p->value();
+        Serial.print("Get parameter value: ");
+        value = request->getParam(name)->value();
+        Serial.println(value);
         return true;
     }
+    Serial.println("Parameter not found");
     return false;
 }
 
@@ -419,7 +428,7 @@ void createWebServer(int webtype)
             Serial.print("param N=");
             Serial.println(param_n);
             if(param_n == 0) {
-                request->send_P(200, "text/plain", "Error. No parameter"); //TODO replace status 200
+                request->send_P(400, "text/plain", "Error. No parameter");
                 return;
             }
 
@@ -436,7 +445,7 @@ void createWebServer(int webtype)
             Serial.println(p_value);
 
             if(p->name() != "hour_offset" || p_value < -12 || p_value > 12 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [0]"); //TODO replace status 200
+                request->send_P(400, "text/plain", "Error. Wrong or missing parameter.");
                 return;
             }
             Serial.println("----------------------------------------");
@@ -458,15 +467,15 @@ void createWebServer(int webtype)
             Serial.print("Intager value: ");
             Serial.println(p_value);
 
-            if(p->name() != "minutes_offset" || p_value < 0 || p_value > 59 ) {
-                request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
+            if(p->name() != "minute_offset" || p_value < 0 || p_value > 59 ) {
+                request->send_P(400, "text/plain", "Error. Wrong or missing parameter.");
                 return;
             }
             Serial.println("----------------------------------------");
-            int8_t minutes_offset = p_value;
+            int8_t minute_offset = p_value;
             Serial.print("Set minutes offset: ");
-            Serial.println(minutes_offset);
-            config_SetTimeSettings(hour_offset, minutes_offset);
+            Serial.println(minute_offset);
+            config_SetTimeSettings(hour_offset, minute_offset);
             request->send_P(200, "text/plain", "OK");
         });
 
@@ -556,15 +565,23 @@ void createWebServer(int webtype)
             //     return request->requestAuthentication();
             request->send_P( 200, "text/plain", pressure_json_history.c_str() );
         });
-        server.on("/time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
+        server.on("/set_time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             String param1, param2;
+            Serial.print("URL: ");
+            Serial.println(request->url());
             if( GetParamValue(request, "hour_offset", param1) && GetParamValue(request, "minute_offset",param2)){
                 Serial.printf("Set time offset: %02ld:%02ld\r\n",param1.toInt(), param2.toInt());
                 if( !config_SetTimeSettings(param1.toInt(), param2.toInt()) ){
-                    request->send_P(200, "text/plain", "Error. Wrong parameter [1]"); //TODO replace status 200
+                    Serial.println("Time offset parameters are invalid");
+                    request->send_P(400, "text/plain", "Error. Wrong or missing parameter.");
                     return;
                 }
+            } else {
+                Serial.println("Parse time offset parameters error");
+                request->send_P(400, "text/plain", "Error. Wrong or missing parameter.");
+                return;
             }
+            Serial.println("Time offset set successfully");
             request->send_P(200, "text/plain", "OK");
         });
         server.on("/clear_wifi_settings", HTTP_GET, [](AsyncWebServerRequest *request) {

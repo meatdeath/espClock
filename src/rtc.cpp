@@ -170,7 +170,6 @@ void rtc_SetDT(DateTime dt) {
 void rtc_SetEpoch(uint32_t epoch_time) {
     Serial.println("Adjust RTC module with epoch time");
     rtc.adjust( DateTime(epoch_time) );
-    rtc_SecondsSinceUpdate = 0;
 }
 
 //-----------------------------------------------------------------------------

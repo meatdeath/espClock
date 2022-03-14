@@ -48,13 +48,13 @@ void config_store(void) {
     eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
 }
 
-bool config_SetTimeSettings(int8_t hours_offset, int8_t minutes_offset) {
-    if( hours_offset < (-12) || hours_offset > 12 || 
-        minutes_offset < 0 || minutes_offset > 59 ) {
+bool config_SetTimeSettings(int8_t hour_offset, int8_t minute_offset) {
+    if( hour_offset < (-12) || hour_offset > 12 || 
+        minute_offset < 0 || minute_offset > 59 ) {
             return false;
     }
-    config_clock.hour_offset = hours_offset;
-    config_clock.minute_offset = minutes_offset;
+    config_clock.hour_offset = hour_offset;
+    config_clock.minute_offset = minute_offset;
 
     eeprom_WriteBlock(EEPROM_CONFIG_CLOCK_ADDR, (uint8_t*)&config_clock, sizeof(config_clock_t));
 

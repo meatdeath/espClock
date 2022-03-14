@@ -4,12 +4,12 @@ var m_offset = 0;
 
 function setOffset() {
     h_offset = document.getElementById('hour_offset').value;
-    m_offset = document.getElementById('minutes_offset').value;
+    m_offset = document.getElementById('minute_offset').value;
 
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
     };
-    param='?hour_offset=' + h_offset + '&minutes_offset=' + m_offset;
+    param='?hour_offset=' + h_offset + '&minute_offset=' + m_offset;
     xhttp.open('GET', '/set_time_offset'+param, true);
     xhttp.send();
 }
