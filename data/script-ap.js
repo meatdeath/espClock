@@ -14,6 +14,22 @@ function setOffset() {
     xhttp.send();
 }
 
+// const myTimeout = setTimeout (reloadPage, 5*60*1000);
+// function reloadPage() {
+//     location.reload();
+// }
+
+function GetFormattedDTString(dt) {
+    return (
+        "" + dt.getFullYear() + "-" +
+        ("0"+(dt.getMonth()+1)).slice(-2) + "-" +
+        ("0"+dt.getDate()).slice(-2) + " " +
+        ("0"+dt.getHours()).slice(-2) + ":" +
+        ("0"+dt.getMinutes()).slice(-2) + ":" +
+        ("0"+dt.getSeconds()).slice(-2)
+    );
+}
+
 function getTime() 
 {
     var xhttp = new XMLHttpRequest();
@@ -21,10 +37,10 @@ function getTime()
     {
         if (this.readyState == 4 && this.status == 200) 
         {
-            var my_date = new Date(0); // The 0 there is the key, which sets the date to the epoch
+            var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
             time = this.responseText;
-            my_date.setUTCSeconds(time*1);
-            document.getElementById("utc-time-string").innerText = my_date.toUTCString();
+            dt.setUTCSeconds(time*1);
+            document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
         }
     };
     xhttp.open('GET', 'getTime', true);
@@ -38,11 +54,11 @@ function getOffset()
     {
         if (this.readyState == 4 && this.status == 200) 
         {
-            var my_date = new Date(0); // The 0 there is the key, which sets the date to the epoch
+            var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
             var offset_min = this.responseText;
 
-            my_date.setUTCSeconds(time*1 + offset_min*60);
-            document.getElementById("corrected-time-string").innerText = my_date.toUTCString();//my_date.toISOString();
+            dt.setUTCSeconds(time*1 + offset_min*60);
+            document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
 
             h_offset = offset_min/60;
             m_offset = offset_min%60;

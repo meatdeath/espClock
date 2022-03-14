@@ -37,7 +37,7 @@ var h_offset = 0;
 var m_offset = 0;
 
 function getCorrectionString() {
-    return ""+h_offset+"h"+m_offset+"m";
+    return ""+h_offset+"h "+m_offset+"m";
 }
 
 function getTime() {
@@ -72,7 +72,7 @@ function getOffset()
 
             h_offset = offset_min/60;
             m_offset = offset_min%60;
-            document.getElementById("time-offset-string").innerText = ""+h_offset+"h "+m_offset+"m";
+            document.getElementById("time-offset-string").innerText = getCorrectionString();
         }
     };
     xhttp.open('GET', 'getTimeOffset', true);
@@ -146,10 +146,19 @@ function updatePressureGraph() {
     }
 }
 
+function GetFormattedDTString(dt) {
+    return (
+        "" + dt.getFullYear() + "-" +
+        ("0"+(dt.getMonth()+1)).slice(-2) + "-" +
+        ("0"+dt.getDate()).slice(-2) + " " +
+        ("0"+dt.getHours()).slice(-2) + ":" +
+        ("0"+dt.getMinutes()).slice(-2) + ":" +
+        ("0"+dt.getSeconds()).slice(-2)
+    );
+}
+
 window.onload = function() {
     setTimeout( function() {
-        document.getElementById("hour_offset").value = h_offset;
-        document.getElementById("minutes_offset").value = m_offset;
         pressure_chart = new Chart('pressureChart', {
             type: 'line',
             data: {
@@ -259,13 +268,13 @@ window.onload = function() {
     setInterval( function() {
         var utc_time = getTime();
         var corrected_time = getCorrectedTime();
-        var correction = getCorrectionString();
-        var my_date = new Date(0); // The 0 there is the key, which sets the date to the epoch
-        my_date.setUTCSeconds(utc_time);
-        document.getElementById("utc-time-string").innerText = my_date.toISOString();
-        my_date = new Date(0); 
-        my_date.setUTCSeconds(corrected_time);
-        document.getElementById("corrected-time-string").innerText = my_date.toISOString();
-        document.getElementById("time-offset-string").innerText = correction;
+        var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
+        dt.setUTCSeconds(utc_time);
+        document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
+        dt = new Date(0); 
+        dt.setUTCSeconds(corrected_time);
+        document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
+        document.getElementById("time-offset-string").innerText = getCorrectionString();
     }, 1000 );
 }
+

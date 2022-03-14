@@ -30,10 +30,20 @@
             <p class='time_offset_section'>
                 <button onclick='setOffset(this);'>Update time offset</button>
             </p>
-
-            <p>UTC Time: <span id='utc-time-string'>--/--/-- --:--:--</span></p>
-            <p>Corrected Time: <span id='corrected-time-string'>--/--/-- --:--:--</span></p>
-            <p>Current time offset: <span id='time-offset-string'>--/--/-- --:--:--</span></p>
+            <table>
+              <tr>
+                <td>UTC Time:</td>
+                <td><span id='utc-time-string'></span></td>
+              </tr>
+              <tr>
+                <td>Corrected Time:</td>
+                <td><span id='corrected-time-string'></span></td>
+              </tr>
+              <tr>
+                <td>Current time offset: </td>
+                <td><span id='time-offset-string'></span></td>
+              </tr>
+            </table>
 
             <hr>
             <p>IP address: <span id="device-ip">%LOCAL_IP_ADDRESS%</span></p>
