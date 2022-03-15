@@ -215,10 +215,10 @@ void loop()
                     }
                 }
                 Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
-                              (ntp_time / (60 * 60)) % 24,
-                              (ntp_time / 60) % 60,
-                              ntp_time % 60,
-                              ntp_time);
+                              (int)((ntp_time / (60 * 60)) % 24),
+                              (int)((ntp_time / 60) % 60),
+                              (int)(ntp_time % 60),
+                              ntp_time );
             }
         }
         if (swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true))

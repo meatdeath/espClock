@@ -12,6 +12,7 @@
 #include <LittleFS.h>
 
 extern volatile bool softreset;
+extern unsigned long ntp_time;
 
 IPAddress apIP(192,168,1,1);
 IPAddress gateway(192,168,1,9);
@@ -534,6 +535,74 @@ void createWebServer(int webtype)
             Serial.println("Accessing root page...");
             //request->send(LittleFS, "/index-ap.html", "text/html");
             request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
+        });
+
+        server.on("/getFastTelemetry", HTTP_GET, [](AsyncWebServerRequest *request){
+            int8_t hours = 0;
+            int8_t minutes = 0;
+            int8_t seconds = 0;
+            // int8_t seconds = 0;
+            if (time_in_sync_with_ntp)
+            {
+                unsigned long time = /*timeClient.getRawEpochTime()*/ 
+                    (unsigned long)ntp_time + 
+                    //(unsigned long)config_clock.hour_offset * 3600 + 
+                    //(unsigned long)config_clock.minute_offset * 60 + 
+                    (unsigned long)rtc_SecondsSinceUpdate;
+                hours = (time / (60 * 60)) % 24;
+                minutes = (time / 60) % 60;
+                seconds = time % 60;
+                //Serial.printf("Time from NTP: %lu => %d:%d (%lu)\r\n", ntp_time, hours, minutes, time);
+            }
+            else
+            {
+                DateTime dt = rtc_dt +
+                              TimeSpan(rtc_SecondsSinceUpdate / (60 * 60 * 24),
+                                       /*config_clock.hour_offset +*/ (rtc_SecondsSinceUpdate / 3600) % 24,
+                                       /*config_clock.minute_offset +*/ (rtc_SecondsSinceUpdate / 60) % 60,
+                                       rtc_SecondsSinceUpdate % 60);
+                hours = dt.hour();
+                minutes = dt.minute();
+                seconds = dt.second();
+                //Serial.printf("Time from RTC: %d:%d\r\n", hours, minutes);
+            }
+            String response_str = String();
+
+            // Hours
+            response_str = "{ \"Hours\":\"";
+            response_str +=  hours;
+            response_str += "\",";
+            // Minutes
+            response_str += "{ \"Minutes\":\"";
+            response_str += minutes;
+            response_str += "\",";
+            // Seconds
+            response_str += "{ \"Seconds\":\"";
+            response_str += seconds;
+            response_str += "\",";
+            // Hous offset
+            response_str = "{ \"HourOffset\":\"";
+            response_str +=  config_clock.hour_offset;
+            response_str += "\",";
+            // Minute offset
+            response_str += "{ \"MinuteOffset\":\"";
+            response_str += config_clock.minute_offset;
+            response_str += "\",";
+
+            // Seconds until next pressure connection
+            response_str += "{ \"SecondsUntilPressureCollection\":\"";
+            response_str += swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter();
+            response_str += "\",";
+            // Pressure
+            response_str += "{ \"Pressure\":\"";
+            response_str += pressure;
+            response_str += "\",";
+            // Temperature
+            response_str += "{ \"Temperature\":\"";
+            response_str += temperature;
+            response_str += "\"}";
+
+            request->send_P(200, "text/plain", response_str.c_str());
         });
 
         server.on("/getTimeOffset", HTTP_GET, [](AsyncWebServerRequest *request){

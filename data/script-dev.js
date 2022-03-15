@@ -67,6 +67,43 @@ function setOffset() {
     xhttp.send();
 }
 
+function getFastTelemetry() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() 
+    {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+            var telemetry = JSON.parse(this.responseText);
+            document.getElementById("pressure-text").innerText = telemetry.Pressure;
+            document.getElementById("temperature-text").innerText = telemetry.Temperature;
+            document.getElementById("utc-time-string").innerText = 
+                    telemetry.Hours + ":" + telemetry.Minutes + ":" + telemetry.Seconds;
+            var corr_hour = telemetry.Hours + telemetry.HourOffset;
+            var corr_minute = telemetry.Minutes + telemetry.MinuteOffset;
+            var corr_second = telemetry.Seconds;
+            if( corr_minute >= 60 ) {
+                corr_minute -= 60;
+                corr_hour += 1;
+            }
+            if( corr_hour >= 24 ) {
+                corr_hour -= 24;
+            }
+
+            document.getElementById("corrected-time-string").innerText =
+                corr_hour + ":" + corr_minute + ":" + telemetry.Seconds;
+
+            h_offset = telemetry.HourOffset;
+            m_offset = telemetry.MinuteOffset;
+            document.getElementById("time-offset-string").innerText = getCorrectionString();
+            document.getElementById("pressure-collection-time-left-text").innerText = 
+                    (telemetry.SecondsUntilPressureCollection/60) + "h " + 
+                    (telemetry.SecondsUntilPressureCollection%60) + "min";
+        }
+    };
+    xhttp.open('GET', 'getFastTelemetry', true);
+    xhttp.send();
+}
+
 function getOffset() 
 {
     var xhttp = new XMLHttpRequest();
@@ -276,15 +313,16 @@ window.onload = function() {
     document.getElementById("minute_offset").value = m_offset;
 
     setInterval( function() {
-        var utc_time = getTime();
-        var corrected_time = getCorrectedTime();
-        var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
-        dt.setUTCSeconds(utc_time);
-        document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
-        dt = new Date(0); 
-        dt.setUTCSeconds(corrected_time);
-        document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
-        document.getElementById("time-offset-string").innerText = getCorrectionString();
+        // var utc_time = getTime();
+        // var corrected_time = getCorrectedTime();
+        // var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
+        // dt.setUTCSeconds(utc_time);
+        // document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
+        // dt = new Date(0); 
+        // dt.setUTCSeconds(corrected_time);
+        // document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
+        // document.getElementById("time-offset-string").innerText = getCorrectionString();
+        getFastTelemetry();
     }, 1000 );
 }
 
