@@ -86,8 +86,8 @@ function getFastTelemetry() {
             m_offset = telemetry.MinuteOffset;
             document.getElementById("time-offset-string").innerText = getCorrectionString();
             document.getElementById("pressure-collection-time-left-text").innerText = 
-                    (telemetry.SecondsUntilPressureCollection/60).toFixed() + "min " + 
-                    ("0"+(telemetry.SecondsUntilPressureCollection%60)).slice(-2) + "sec";
+                            (telemetry.SecondsUntilPressureCollection/60).toFixed() + ":" + 
+                            ("0"+(telemetry.SecondsUntilPressureCollection%60)).slice(-2);
         }
     };
     xhttp.open('GET', 'getFastTelemetry', true);

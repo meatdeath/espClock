@@ -58,41 +58,47 @@ void setup()
     //delay(1000);
 
     uint8_t eepStatus;
-    Serial.println("Init EEPROM...");
+    Serial.print("Init EEPROM... ");
     eepStatus = eeprom.begin(eeprom.twiClock400kHz);
     if (eepStatus)
     {
-        Serial.print(F("extEEPROM.begin() failed, status = "));
+        Serial.print(F("ERROR, status = "));
         Serial.println(eepStatus);
+    } else {
+        Serial.println("OK");
     }
 
     // Init led display
-    Serial.println("Init MAX7219...");
+    Serial.print("Init MAX7219... ");
     display_Init();
     display_SetBrightness(20);
 
     // Print loading on led screen
     display_PrintStarting();
+    Serial.println("OK, brightness set to 20%");
 
     // load config
+    Serial.println("Load config from EEPROM...");
     config_init();
+    Serial.printf("Config: Time offset... %d hours %02d minute(s)\r\n", config_clock.hour_offset, config_clock.minute_offset);
 
-    Serial.printf("Time offset... %d hours %02d minute(s)\r\n", config_clock.hour_offset, config_clock.minute_offset);
-
+    Serial.println("Init RTC...");
     rtc_Init();
-
     rtc_GetDT(&rtc_dt);
     Serial.printf("RTC time: %02d:%02d:%02d\r\n", rtc_dt.hour(), rtc_dt.minute(), rtc_dt.second());
 
     UpdatePressureCollectionTimer(rtc_dt.secondstime());
+    Serial.printf("Next pressure collection in %d seconds\r\n", swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter());
 
+    Serial.print("Init BMP280...");
     if (!bmp.begin(BMP280_ADDRESS_ALT))
     {
-        Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
+        Serial.println(F("ERROR\r\nCould not find a valid BMP280 sensor, check wiring or "
                          "try a different address!"));
     }
     else
     {
+        Serial.println("OK");
         /* Default settings from datasheet. */
         bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                         Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
@@ -127,12 +133,12 @@ void setup()
     time_sync_with_ntp_enabled = false;
     time_in_sync_with_ntp = false;
 
-    Serial.println("Restore history...");
+    //Serial.println("Restore history...");
     unsigned long time;
     time = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
-    Serial.printf("GMT time synched with RTC module: %lu\r\n", time);
     eeprom_restore_pressure_history(time);
 
+    //Serial.printf("GMT time synched with RTC module: %lu\r\n", time);
     web_init();
 
     button_Init();
@@ -167,13 +173,13 @@ void loop()
     button_Process();
     if (softreset == true)
     {
-        Serial.println("The board will reset in 10s ");
+        Serial.printf("The board will reset in %ds... \r", 10);
         for (int i = 0; i < 10; i++)
         {
-            Serial.print(".");
+            Serial.printf("The board will reset in %ds... \r", 9-i);
             delay(1000);
         }
-        Serial.println(" reset");
+        Serial.println("Restarting now                    ");
         delay(100);
         ESP.reset();
     }
@@ -286,14 +292,15 @@ void loop()
         if (time_in_sync_with_ntp)
         {
             timeinsec = /*timeClient.getRawEpochTime()*/ ntp_time + rtc_SecondsSinceUpdate;
-            Serial.printf("Time from ntp %lu, pressure %3.1f\r\n", timeinsec, pressure);
+            Serial.printf("Time to collect pressure history from NTP %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         else
         {
             timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
-            Serial.printf("Time from rtc module %lu, pressure %3.1f\r\n", timeinsec, pressure);
+            Serial.printf("Time to collect pressure history from RTC module %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         eeprom_add_history_item(timeinsec, pressure);
+        Serial.println("OK");
         generate_pressure_history();
     }
 

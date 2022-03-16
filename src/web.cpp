@@ -3,7 +3,7 @@
 #include "rtc.h"
 #include "pressure_history.h"
 
-#define OTA
+//#define OTA
 
 #ifdef OTA
 #include <AsyncElegantOTA.h>
@@ -54,24 +54,24 @@ typedef struct ap_list_st {
 ap_list_t ap_list[AP_LIST_MAX];
 
 void web_init(void) {
+    Serial.print("Check filesystem... ");
     if(!LittleFS.begin()){
-        Serial.println("An Error has occurred while mounting LittleFS");
+        Serial.println("ERROR\r\nAn Error has occurred while mounting LittleFS");
         return;
     }
-    Serial.println("Check filesystem...");
     File file = LittleFS.open("/index-ap.html", "r");
     if(!file){
-        Serial.println("Failed to open file \"index-ap.html\" for reading");
+        Serial.println("ERROR\r\nFailed to open file \"index-ap.html\" for reading");
         file.close();
         return;
     }
     if(!file.available()){
-        Serial.println("Failed to read file \"index-ap.html\"");
+        Serial.println("ERROR\r\nFailed to read file \"index-ap.html\"");
         file.close();
         return;
     }
     file.close();
-    Serial.println("Filesystem OK");
+    Serial.println("OK");
 }
 
 void wifi_processing(void) {
@@ -80,10 +80,10 @@ void wifi_processing(void) {
     case STATE_WIFI_IDLE:
         if( config_wifi.valid_marker == VALID_CONFIG_MARKER )
         {
-            Serial.print("Network name: ");
-            Serial.println(config_wifi.name);
-            Serial.print("Password: ");
-            Serial.println(config_wifi.password);
+            // Serial.print("Network name: ");
+            // Serial.println(config_wifi.name);
+            // Serial.print("Password: ");
+            // Serial.println(config_wifi.password);
             Serial.print("Waiting for Wifi to connect "); 
             WiFi.begin( config_wifi.name, config_wifi.password );
             WifiState = STATE_WIFI_CONNECTING;
@@ -135,11 +135,13 @@ void wifi_processing(void) {
 }
 
 void launchWeb(int webtype) {
-
-    Serial.print("Local IP: ");
-    Serial.println(WiFi.localIP());
-    Serial.print("SoftAP IP: ");
-    Serial.println(WiFi.softAPIP());
+    if(webtype==WEB_PAGES_NORMAL) {
+        Serial.print("Local IP: ");
+        Serial.println(WiFi.localIP());
+    } else {
+        Serial.print("SoftAP IP: ");
+        Serial.println(WiFi.softAPIP());
+    }
     createWebServer(webtype);
     // Start the server
 #ifdef OTA
@@ -303,7 +305,10 @@ String processor(const String& var){
         return String(temperature);
     }
     else if (var == "PRESSURECOLLECTTIMELEFT"){
-        return String(swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter());
+        char tmp[10];
+        uint16_t counter = swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter();
+        sprintf(tmp,"%02d:%02d", counter/60, counter%60);
+        return String(tmp);
     }
     else if (var == "PRESSURE"){
         return String(pressure);

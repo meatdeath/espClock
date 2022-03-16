@@ -64,7 +64,7 @@ bool config_SetTimeSettings(int8_t hour_offset, int8_t minute_offset) {
 void config_validate(void) {
     Serial.println("Config validation");
     Serial.printf("config_wifi.name: %s\r\n",config_wifi.name);
-    Serial.printf("config_wifi.password: %s\r\n",config_wifi.password);
+    Serial.printf("config_wifi.password: %c******\r\n",config_wifi.password[0]);
     if( config_wifi.valid_marker != VALID_CONFIG_MARKER ) 
     {
         if( config_wifi.name[0] < 'A' || 

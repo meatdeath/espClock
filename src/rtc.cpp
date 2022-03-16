@@ -155,10 +155,10 @@ void rtc_Init(void) {
     Serial.printf("RTC init time: %02d:%02d:%02d\r\n", dt.hour(), dt.minute(), dt.second());
     rtc_SecondsSinceUpdate = 0;
     
-    Serial.println("Init pin interrupt");
+    Serial.print("Init pin interrupt... ");
     pinMode(RTC_SQW_PIN, INPUT);
     attachInterrupt(digitalPinToInterrupt(RTC_SQW_PIN), time_tick500ms, CHANGE);
-    Serial.println("Init pin interrupt done");
+    Serial.println("OK");
 }
 
 void rtc_GetDT(DateTime *dst_dt) {

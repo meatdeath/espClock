@@ -96,7 +96,7 @@ void generate_pressure_history(void) {
 
 void eeprom_add_history_item( unsigned long time, float pressure ) {
     unsigned long addr = EEPROM_HISTORY_ADDR + pressure_history_end*EEPROM_HISTORY_ITEM_SIZE;
-    Serial.printf("Adding history item: time=%lu, pressure=%3.1f\r\n", time, (double)pressure );
+    //Serial.printf("Adding history item: time=%lu, pressure=%3.1f\r\n", time, (double)pressure );
     pressure_history_item[pressure_history_end].time = time;
     pressure_history_item[pressure_history_end].pressure = pressure;
 
@@ -124,21 +124,26 @@ void eeprom_restore_pressure_history(unsigned long time) {
     pressure_history_end = 0;
     pressure_history_size = 0;
 
-    Serial.printf("Restore history time: 0x%08lx / %lu\r\n", time, time);
+//    Serial.printf("Restore history time: 0x%08lx / %lu\r\n", time, time);
 
-    Serial.println("Read history from EEPROM");
-    uint8_t eepStatus;
+    Serial.print("Read history from EEPROM... ");
+    uint8_t eepStatus = 0;
     for( int i = 0; i < PRESSURE_HISTORY_SIZE; i++ ) {
-        eepStatus = eeprom.read( EEPROM_HISTORY_ADDR + i*EEPROM_HISTORY_ITEM_SIZE, 
+        eepStatus |= eeprom.read( EEPROM_HISTORY_ADDR + i*EEPROM_HISTORY_ITEM_SIZE, 
                                 (uint8_t*)(&pressure_history_item[i]), 
                                 EEPROM_HISTORY_ITEM_SIZE );
     }
-    Serial.printf("EEPROM status: %d\r\n", eepStatus);
-pressureHistory_printDumpFromEeprom();
+    if( eepStatus )
+        Serial.println("ERROR");
+    else
+        Serial.println("OK");
+        
+    Serial.print("Process history...");
+//pressureHistory_printDumpFromEeprom();
     // Remove invalid and outdated items
     pressure_history_t empty_item;
     memset((uint8_t*)(&empty_item), 0xFF, sizeof(pressure_history_t));
-    Serial.println("1. Remove invalid and outdated items");
+//    Serial.println("1. Remove invalid and outdated items");
     for( i = 0; i < PRESSURE_HISTORY_SIZE; i++ ) 
     {
         if(memcmp((uint8_t*)&pressure_history_item[i], (uint8_t*)(&empty_item), sizeof(pressure_history_t)) == 0 ) 
@@ -161,23 +166,23 @@ pressureHistory_printDumpFromEeprom();
             else if( pressure_history_item[i].pressure < 700 ) Serial.printf("Delete item [%d], it has invalid low pressure %f\r\n", i, pressure_history_item[i].pressure);
             else if( pressure_history_item[i].pressure > 800 ) Serial.printf("Delete item [%d], it has invalid high pressure %f\r\n", i, pressure_history_item[i].pressure);
             else 
-                Serial.printf("Unknown reason to delete item [%d], pressure=%f, time=%lu\r\n", 
-                    i,
-                    pressure_history_item[i].pressure, 
-                    pressure_history_item[i].time);
+                // Serial.printf("Unknown reason to delete item [%d], pressure=%f, time=%lu\r\n", 
+                //     i,
+                //     pressure_history_item[i].pressure, 
+                //     pressure_history_item[i].time);
             // clear item
             memset((uint8_t*)&(pressure_history_item[i]), 0xFF, sizeof(pressure_history_t) );
         } 
         else 
         {
-            Serial.printf("Keep item [%d], pressure: %f mm, time: %lu sec\r\n", 
-                i,
-                pressure_history_item[i].pressure, 
-                pressure_history_item[i].time);
+            // Serial.printf("Keep item [%d], pressure: %f mm, time: %lu sec\r\n", 
+            //     i,
+            //     pressure_history_item[i].pressure, 
+            //     pressure_history_item[i].time);
         }
     }
                 
-    Serial.println("2. Sort pressure history by time");
+//    Serial.println("2. Sort pressure history by time");
     for( i = 1; i < PRESSURE_HISTORY_SIZE; i++ ) 
     {
         //Serial.printf("Move item from %d ", i);
@@ -198,7 +203,7 @@ pressureHistory_printDumpFromEeprom();
     }
 
     // Determine the size of the history
-    Serial.println("3. Determine the size of the history");
+//    Serial.println("3. Determine the size of the history");
     while( pressure_history_size < PRESSURE_HISTORY_SIZE && pressure_history_item[pressure_history_size].time != (unsigned long)-1 )
     {
         pressure_history_size++;
@@ -208,7 +213,7 @@ pressureHistory_printDumpFromEeprom();
     {
         pressure_history_end = 0;
     }
-    Serial.printf("History: start=%d, end=%d, size=%d\r\n", pressure_history_start, pressure_history_end, pressure_history_size);
+//    Serial.printf("History: start=%d, end=%d, size=%d\r\n", pressure_history_start, pressure_history_end, pressure_history_size);
 
     // Update pressure history in eeprom
     for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++) {
@@ -216,7 +221,7 @@ pressureHistory_printDumpFromEeprom();
     }
 
     // Add holes
-    Serial.println("4. Add holes");
+//    Serial.println("4. Add holes");
     if( pressure_history_size > 0 )
     {
         int last_item_index;
@@ -230,14 +235,14 @@ pressureHistory_printDumpFromEeprom();
             COLLECT_PRESSURE_HISTORY_PERIOD;
         last_item_time *= COLLECT_PRESSURE_HISTORY_PERIOD;
 
-        Serial.printf("Last item [%d] time %lu sec\r\n", last_item_index, last_item_time);
+//        Serial.printf("Last item [%d] time %lu sec\r\n", last_item_index, last_item_time);
 
         if( last_item_time > (time-COLLECT_PRESSURE_HISTORY_PERIOD*PRESSURE_HISTORY_SIZE) ) {
             while( last_item_time < (time-COLLECT_PRESSURE_HISTORY_PERIOD) )
             {
                 last_item_time += COLLECT_PRESSURE_HISTORY_PERIOD;
                 eeprom_add_history_item( last_item_time, 800 );
-                Serial.printf("Add hole item with time %lu sec\r\n", last_item_time);
+//                Serial.printf("Add hole item with time %lu sec\r\n", last_item_time);
             }
         } else {
             memset( &pressure_history_item, 0xff, PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE );
@@ -246,6 +251,7 @@ pressureHistory_printDumpFromEeprom();
             pressure_history_size = 0;
         }
     }
+    Serial.println("OK");
 
     // calculate timeout
     UpdatePressureCollectionTimer(time);
