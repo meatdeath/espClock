@@ -1,34 +1,35 @@
 
-var pressure_history_data = '{\
-    "current":745,\
-    "history":[\
-        {"time":1642643026,"value":762},\
-        {"time":1642650226,"value":764},\
-        {"time":1642657426,"value":755},\
-        {"time":1642664626,"value":745},\
-        {"time":1642671826,"value":740},\
-        {"time":1642679026,"value":730},\
-        {"time":1642686226,"value":745},\
-        {"time":1642693426,"value":742},\
-        {"time":1642700626,"value":740},\
-        {"time":1642707826,"value":735},\
-        {"time":1642715026,"value":733},\
-        {"time":1642722226,"value":734},\
-        {"time":1642729426,"value":747},\
-        {"time":1642736626,"value":750},\
-        {"time":1642743826,"value":750},\
-        {"time":1642751026,"value":755},\
-        {"time":1642758226,"value":756},\
-        {"time":1642765426,"value":760},\
-        {"time":1642772626,"value":763},\
-        {"time":1642779826,"value":762},\
-        {"time":1642787026,"value":764},\
-        {"time":1642794226,"value":769},\
-        {"time":1642801426,"value":760},\
-        {"time":1642808626,"value":756},\
-        {"time":1642815826,"value":755},\
-        {"time":1642823026,"value":750}\
-]}';
+var pressure_history_data;
+// var pressure_history_data = '{\
+//     "current":745,\
+//     "history":[\
+//         {"time":1642643026,"value":762},\
+//         {"time":1642650226,"value":764},\
+//         {"time":1642657426,"value":755},\
+//         {"time":1642664626,"value":745},\
+//         {"time":1642671826,"value":740},\
+//         {"time":1642679026,"value":730},\
+//         {"time":1642686226,"value":745},\
+//         {"time":1642693426,"value":742},\
+//         {"time":1642700626,"value":740},\
+//         {"time":1642707826,"value":735},\
+//         {"time":1642715026,"value":733},\
+//         {"time":1642722226,"value":734},\
+//         {"time":1642729426,"value":747},\
+//         {"time":1642736626,"value":750},\
+//         {"time":1642743826,"value":750},\
+//         {"time":1642751026,"value":755},\
+//         {"time":1642758226,"value":756},\
+//         {"time":1642765426,"value":760},\
+//         {"time":1642772626,"value":763},\
+//         {"time":1642779826,"value":762},\
+//         {"time":1642787026,"value":764},\
+//         {"time":1642794226,"value":769},\
+//         {"time":1642801426,"value":760},\
+//         {"time":1642808626,"value":756},\
+//         {"time":1642815826,"value":755},\
+//         {"time":1642823026,"value":750}\
+// ]}';
 
 var last_time = -1;
 var back_color = 0;
@@ -38,17 +39,6 @@ var m_offset = 0;
 
 function getCorrectionString() {
     return ""+h_offset+"h "+m_offset+"m";
-}
-
-function getTime() {
-    return Math.floor((new Date).getTime()/1000);
-}
-
-function getCorrectedTime() {
-    var time = Math.floor((new Date).getTime()/1000);
-    time += h_offset*60*60;
-    time += m_offset*60;
-    return time;
 }
 
 function setOffset() {
@@ -77,9 +67,9 @@ function getFastTelemetry() {
             document.getElementById("pressure-text").innerText = telemetry.Pressure;
             document.getElementById("temperature-text").innerText = telemetry.Temperature;
             document.getElementById("utc-time-string").innerText = 
-                    telemetry.Hours + ":" + telemetry.Minutes + ":" + telemetry.Seconds;
-            var corr_hour = telemetry.Hours + telemetry.HourOffset;
-            var corr_minute = telemetry.Minutes + telemetry.MinuteOffset;
+                ("0"+telemetry.Hours).slice(-2) + ":" + ("0"+telemetry.Minutes).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
+            var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
+            var corr_minute = telemetry.Minutes*1 + telemetry.MinuteOffset*1;
             var corr_second = telemetry.Seconds;
             if( corr_minute >= 60 ) {
                 corr_minute -= 60;
@@ -90,43 +80,21 @@ function getFastTelemetry() {
             }
 
             document.getElementById("corrected-time-string").innerText =
-                corr_hour + ":" + corr_minute + ":" + telemetry.Seconds;
+                ("0"+corr_hour).slice(-2) + ":" + ("0"+corr_minute).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
 
             h_offset = telemetry.HourOffset;
             m_offset = telemetry.MinuteOffset;
             document.getElementById("time-offset-string").innerText = getCorrectionString();
             document.getElementById("pressure-collection-time-left-text").innerText = 
-                    (telemetry.SecondsUntilPressureCollection/60) + "h " + 
-                    (telemetry.SecondsUntilPressureCollection%60) + "min";
+                    (telemetry.SecondsUntilPressureCollection/60).toFixed() + "min " + 
+                    ("0"+(telemetry.SecondsUntilPressureCollection%60)).slice(-2) + "sec";
         }
     };
     xhttp.open('GET', 'getFastTelemetry', true);
     xhttp.send();
 }
 
-function getOffset() 
-{
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() 
-    {
-        if (this.readyState == 4 && this.status == 200) 
-        {
-            var my_date = new Date(0); // The 0 there is the key, which sets the date to the epoch
-            var offset_min = this.responseText;
-
-            my_date.setUTCSeconds(time*1 + offset_min*60);
-            document.getElementById("corrected-time-string").innerText = my_date.toUTCString();//my_date.toISOString();
-
-            h_offset = offset_min/60;
-            m_offset = offset_min%60;
-            document.getElementById("time-offset-string").innerText = getCorrectionString();
-        }
-    };
-    xhttp.open('GET', 'getTimeOffset', true);
-    xhttp.send();
-}
-
-function getPressure() 
+function getPressureHistory() 
 {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
@@ -135,7 +103,7 @@ function getPressure()
             updatePressureGraph();
         }
     };
-    xhttp.open('GET', 'getPressure', true);
+    xhttp.open('GET', 'getPressureHistory', true);
     xhttp.send();
 }
 
@@ -152,7 +120,7 @@ function updatePressureGraph() {
         var last_item_hour = 0;
         last_time = -1;
         back_color = 0;
-        document.getElementById("pressure-text").innerText = p_history.current;
+        //document.getElementById("pressure-text").innerText = p_history.current;
         for( var i = 0; i < p_history.history.length; i++) {
             var itemDate = new Date((p_history.history[i].time + (30*60))*1000);
             var itemHour = itemDate.getHours();
@@ -193,136 +161,109 @@ function updatePressureGraph() {
     }
 }
 
-function GetFormattedDTString(dt) {
-    return (
-        "" + dt.getFullYear() + "-" +
-        ("0"+(dt.getMonth()+1)).slice(-2) + "-" +
-        ("0"+dt.getDate()).slice(-2) + " " +
-        ("0"+dt.getHours()).slice(-2) + ":" +
-        ("0"+dt.getMinutes()).slice(-2) + ":" +
-        ("0"+dt.getSeconds()).slice(-2)
-    );
-}
-
 window.onload = function() {
-    setTimeout( function() {
-        pressure_chart = new Chart('pressureChart', {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                    borderColor: 'red',
-                    fill: false,
-                    xAxisID: "time-axis",
-                    yAxisID: "pressure-axis"
+    pressure_chart = new Chart('pressureChart', {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                borderColor: 'red',
+                fill: false,
+                xAxisID: "time-axis",
+                yAxisID: "pressure-axis"
+            }]
+        },
+        plugins: [{
+            beforeDraw: chart => {
+                var ctx = chart.chart.ctx;
+                var colorAxis = chart.scales["color-axis"];
+                ctx.save();
+                ctx.fillStyle = "lightgray";
+                ctx.beginPath();
+                var color_index = 1;
+                var label_index = 0;
+                var xLeft;
+                var xRight;
+                while( label_index < colorAxis.ticks.length )
+                {
+                    while(label_index < colorAxis.ticks.length)
+                    {
+                        if(colorAxis.getLabelForIndex(label_index) == color_index) break;
+                        label_index++;
+                    }
+                    if( label_index < colorAxis.ticks.length ) {
+                        if( color_index&1 ) {
+                            xLeft = colorAxis.getPixelForTick(label_index);
+                        } else {
+                            xRight = colorAxis.getPixelForTick(label_index);
+                            ctx.fillRect(xLeft, 0, xRight-xLeft, 1000);
+                        }
+                        label_index++;
+                        color_index++;
+                    }
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+        }],
+        options: {
+            title:  {display: false, text: 'Pressue history', fontSize: 20},
+            legend: {display: false},
+            scales: {
+                yAxes: [{
+                    id: 'pressure-axis',
+                    ticks: {
+                        suggestedMin: 730,
+                        suggestedMax: 770
+                    }
+                }],
+                xAxes: [{
+                    id: 'time-axis',
+                    //type: 'linear',
+                    ticks:{
+                        callback:function(label){
+                            return label+"h";
+                        }
+                    }
+                },
+                {
+                    id: 'color-axis',
+                    //type: 'linear',
+                    display: false,
+                    gridLines:{
+                        drawOnChartArea: false
+                    },
+                    ticks:{
+                        callback:function(label, index, ticks){
+                            if( index == 0 ) 
+                            {
+                                back_color = 0;
+                                if( label >= 20 || label < 8 ) back_color = 1;
+                            } 
+                            else if( index == (ticks.length-1) ) back_color++;
+                            else if( last_time != -1 && (label == 8 || label == 20) ) back_color++;
+                            last_time = label;
+                            return back_color;
+                        }
+                    }
                 }]
             },
-            plugins: [{
-                beforeDraw: chart => {
-                    var ctx = chart.chart.ctx;
-                    var colorAxis = chart.scales["color-axis"];
-                    ctx.save();
-                    ctx.fillStyle = "lightgray";
-                    ctx.beginPath();
-                    var color_index = 1;
-                    var label_index = 0;
-                    var xLeft;
-                    var xRight;
-                    while( label_index < colorAxis.ticks.length )
-                    {
-                        while(label_index < colorAxis.ticks.length)
-                        {
-                            if(colorAxis.getLabelForIndex(label_index) == color_index) break;
-                            label_index++;
-                        }
-                        if( label_index < colorAxis.ticks.length ) {
-                            if( color_index&1 ) {
-                                xLeft = colorAxis.getPixelForTick(label_index);
-                            } else {
-                                xRight = colorAxis.getPixelForTick(label_index);
-                                ctx.fillRect(xLeft, 0, xRight-xLeft, 1000);
-                            }
-                            label_index++;
-                            color_index++;
-                        }
-                    }
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            }],
-            options: {
-                title:  {display: false, text: 'Pressue history', fontSize: 20},
-                legend: {display: false},
-                scales: {
-                    yAxes: [{
-                        id: 'pressure-axis',
-                        ticks: {
-                            suggestedMin: 730,
-                            suggestedMax: 770
-                        }
-                    }],
-                    xAxes: [{
-                        id: 'time-axis',
-                        //type: 'linear',
-                        ticks:{
-                            callback:function(label){
-                                return label+"h";
-                            }
-                        }
-                    },
-                    {
-                        id: 'color-axis',
-                        //type: 'linear',
-                        display: false,
-                        gridLines:{
-                            drawOnChartArea: false
-                        },
-                        ticks:{
-                            callback:function(label, index, ticks){
-                                if( index == 0 ) 
-                                {
-                                    back_color = 0;
-                                    if( label >= 20 || label < 8 ) back_color = 1;
-                                } 
-                                else if( index == (ticks.length-1) ) back_color++;
-                                else if( last_time != -1 && (label == 8 || label == 20) ) back_color++;
-                                last_time = label;
-                                return back_color;
-                            }
-                        }
-                    }]
-                },
-                animations: {
-                    tension: {
-                        duration: 1000,
-                        easing: 'linear',
-                        from: 1,
-                        to: 0,
-                        loop: true
-                    }
+            animations: {
+                tension: {
+                    duration: 1000,
+                    easing: 'linear',
+                    from: 1,
+                    to: 0,
+                    loop: true
                 }
             }
-        });
-        getPressure();
-        setInterval( getPressure, 5000 );
-        getOffset();
-    }, 500 );
+        }
+    });
 
-    document.getElementById("hour_offset").value = h_offset;
-    document.getElementById("minute_offset").value = m_offset;
-
-    setInterval( function() {
-        // var utc_time = getTime();
-        // var corrected_time = getCorrectedTime();
-        // var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
-        // dt.setUTCSeconds(utc_time);
-        // document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
-        // dt = new Date(0); 
-        // dt.setUTCSeconds(corrected_time);
-        // document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
-        // document.getElementById("time-offset-string").innerText = getCorrectionString();
-        getFastTelemetry();
-    }, 1000 );
+    setInterval( getFastTelemetry, 1000 );
+    getPressureHistory();
+    getFastTelemetry();
+    setInterval( getPressureHistory, 5000 );
 }
 

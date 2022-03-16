@@ -258,8 +258,7 @@ void UpdatePressureCollectionTimer(unsigned long time)
     uint16_t downcounter = COLLECT_PRESSURE_HISTORY_PERIOD - (time%COLLECT_PRESSURE_HISTORY_PERIOD);
     swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].SetDowncounter(downcounter);
     swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].SetTriggered(false);
-    Serial.printf("Time until next pressure collection: %u sec\r\nTime of next collection: %lu sec\r\n", downcounter, time+downcounter );
-
+    //Serial.printf("Time until next pressure collection: %u sec\r\nTime of next collection: %lu sec\r\n", downcounter, time+downcounter );
 }
 
 void clear_log(void) {

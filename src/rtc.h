@@ -24,6 +24,7 @@ enum sw_timers_en {
     SW_TIMER_SWITCH_DISPLAY,
     SW_TIMER_COLLECT_PRESSURE_HISTORY,
     SW_TIMER_GET_AMBIANCE,
+    SW_TIMER_BUTTON,
     SW_TIMER_MAX
 };
 
@@ -48,6 +49,7 @@ class SoftTimer {
         void SetUpdateTime( uint16_t update_time);
         uint16_t GetUpdateTime();
         void _Tick();
+        bool isActive();
     private:
         bool active;
         bool triggered;

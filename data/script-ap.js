@@ -14,11 +14,6 @@ function setOffset() {
     xhttp.send();
 }
 
-// const myTimeout = setTimeout (reloadPage, 5*60*1000);
-// function reloadPage() {
-//     location.reload();
-// }
-
 function GetFormattedDTString(dt) {
     return (
         "" + dt.getFullYear() + "-" +
@@ -30,46 +25,48 @@ function GetFormattedDTString(dt) {
     );
 }
 
-function getTime() 
-{
+function getCorrectionString() {
+    return ""+h_offset+"h "+m_offset+"m";
+}
+
+function getFastTelemetry() {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() 
     {
         if (this.readyState == 4 && this.status == 200) 
         {
-            var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
-            time = this.responseText;
-            dt.setUTCSeconds(time*1);
-            document.getElementById("utc-time-string").innerText = GetFormattedDTString(dt);
+            var telemetry = JSON.parse(this.responseText);
+            document.getElementById("pressure-text").innerText = telemetry.Pressure;
+            document.getElementById("temperature-text").innerText = telemetry.Temperature;
+            document.getElementById("utc-time-string").innerText = 
+                ("0"+telemetry.Hours).slice(-2) + ":" + ("0"+telemetry.Minutes).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
+            var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
+            var corr_minute = telemetry.Minutes*1 + telemetry.MinuteOffset*1;
+            var corr_second = telemetry.Seconds;
+            if( corr_minute >= 60 ) {
+                corr_minute -= 60;
+                corr_hour += 1;
+            }
+            if( corr_hour >= 24 ) {
+                corr_hour -= 24;
+            }
+
+            document.getElementById("corrected-time-string").innerText =
+                ("0"+corr_hour).slice(-2) + ":" + ("0"+corr_minute).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
+
+            h_offset = telemetry.HourOffset;
+            m_offset = telemetry.MinuteOffset;
+            document.getElementById("time-offset-string").innerText = getCorrectionString();
+            document.getElementById("pressure-collection-time-left-text").innerText = 
+                    (telemetry.SecondsUntilPressureCollection/60).toFixed() + "min " + 
+                    ("0"+(telemetry.SecondsUntilPressureCollection%60)).slice(-2) + "sec";
         }
     };
-    xhttp.open('GET', 'getTime', true);
+    xhttp.open('GET', 'getFastTelemetry', true);
     xhttp.send();
 }
 
-function getOffset() 
-{
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() 
-    {
-        if (this.readyState == 4 && this.status == 200) 
-        {
-            var dt = new Date(0); // The 0 there is the key, which sets the date to the epoch
-            var offset_min = this.responseText;
-
-            dt.setUTCSeconds(time*1 + offset_min*60);
-            document.getElementById("corrected-time-string").innerText = GetFormattedDTString(dt);
-
-            h_offset = offset_min/60;
-            m_offset = offset_min%60;
-            document.getElementById("time-offset-string").innerText = ""+h_offset+"h "+m_offset+"m";
-        }
-    };
-    xhttp.open('GET', 'getTimeOffset', true);
-    xhttp.send();
-}
-
-function getPressure() 
+function getPressureHistory() 
 {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() 
@@ -80,31 +77,14 @@ function getPressure()
             document.getElementById("pressure-text").innerText = pressure;
         }
     };
-    xhttp.open('GET', 'getPressure', true);
-    xhttp.send();
-}
-
-function getTemperature() 
-{
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() 
-    {
-        if (this.readyState == 4 && this.status == 200) 
-        {
-            var temperature = this.responseText;
-            document.getElementById("temperature-text").innerText = temperature;
-        }
-    };
-    xhttp.open('GET', 'getTemperature', true);
+    xhttp.open('GET', 'getPressureHistory', true);
     xhttp.send();
 }
 
 window.onload = function() 
-{
-    setInterval( function() {
-        getTime();
-        getOffset();
-        getPressure();
-        getTemperature();
-    }, 1000 );
+{    
+    setInterval( getFastTelemetry, 1000 );
+    getPressureHistory();
+    getFastTelemetry();
+    setInterval( getPressureHistory, 5000 );
 }

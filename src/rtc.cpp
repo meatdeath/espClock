@@ -1,5 +1,6 @@
 #include "rtc.h"
 #include "display.h"
+#include "button.h"
 
 //-----------------------------------------------------------------------------
 
@@ -25,6 +26,7 @@ void rtc_InitSoftTimers() {
     swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,CLOCK_SHOW_TIME,CLOCK_SHOW_TIME,true,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init(true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_GET_AMBIANCE].Init(true,1,1,true,true,SW_TIMER_PRECISION_MS);
+    swTimer[SW_TIMER_BUTTON].Init(false,0,0,false,false,SW_TIMER_PRECISION_S);
 }
 
 SoftTimer::SoftTimer() {
@@ -106,6 +108,10 @@ void SoftTimer::_Tick() {
             }
         }
     } 
+}
+
+bool SoftTimer::isActive() {
+    return this->active;
 }
 
 IRAM_ATTR void time_tick500ms() {

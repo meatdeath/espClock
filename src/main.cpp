@@ -9,6 +9,7 @@
 #include "config.h"
 #include "rtc.h"
 #include "web.h"
+#include "button.h"
 #include "pressure_history.h"
 
 #include <NTPClient.h>
@@ -54,9 +55,7 @@ void setup()
     Serial.println();
     Serial.println();
     Serial.println("Startup");
-    delay(1000);
-
-    //-----------
+    //delay(1000);
 
     uint8_t eepStatus;
     Serial.println("Init EEPROM...");
@@ -65,8 +64,6 @@ void setup()
     {
         Serial.print(F("extEEPROM.begin() failed, status = "));
         Serial.println(eepStatus);
-        while (1)
-            ;
     }
 
     // Init led display
@@ -137,9 +134,17 @@ void setup()
     eeprom_restore_pressure_history(time);
 
     web_init();
+
+    button_Init();
 }
 
 //-----------------------------------------------------------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------
+
 enum dispays_en
 {
     DISPLAY_CLOCK = 0,
@@ -153,11 +158,13 @@ uint8_t intensity = 15;
 uint8_t measured_intensity = 1;
 unsigned long ntp_time = 0;
 
+//-----------------------------------------------------------------------------------------------------------
+
 void loop()
 {
     int ambianceValue = 0; // value abiance read from the port
     wifi_processing();
-
+    button_Process();
     if (softreset == true)
     {
         Serial.println("The board will reset in 10s ");

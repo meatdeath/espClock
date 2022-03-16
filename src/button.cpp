@@ -1,46 +1,68 @@
 #include "button.h"
+#include "rtc.h"
+#include "config.h"
 
-#define BUTTON_PIN  8
+#define BUTTON_PIN  16
+
+typedef enum button_state_en {
+    BUTTON_STATE_DOWN = 0,
+    BUTTON_STATE_UP = 1
+} button_state_t;
 
 
-class Button {
-    private:
-        uint8_t pin;
-        uint8_t state;
-        uint8_t old_state;
-        uint8_t event;
-    public:
-        Button(uint8_t pin);
-        void Init(uint8_t pin);
-        uint8_t GetState();
-        void UpdateTick();
-};
+#define BUTTON_EVENT_PRESSED            (1<<0)
+#define BUTTON_EVENT_SHORT_PRESS        (1<<1)
+#define BUTTON_EVENT_MIDDLE_PRESS       (1<<2)
+#define BUTTON_EVENT_LONG_PRESS         (1<<3)
+#define BUTTON_EVENT_LONG_LONG_PRESS    (1<<4)
 
-Button::Button(uint8_t pin) {
-    pinMode( pin, INPUT_PULLUP );
-    pin = pin;
-    state = BUTTON_STATE_UP;
-    old_state = BUTTON_STATE_UP;
-    event = 0;
+void button_Init() 
+{
+    pinMode( BUTTON_PIN, INPUT_PULLDOWN_16 );
 }
+void button_Process() 
+{
+    int button_event = 0;
+    static int btn_evt = 0;
 
-void Button::Init(uint8_t pin) {
-    pinMode( pin, INPUT_PULLUP );
-    pin = pin;
-    state = BUTTON_STATE_UP;
-    old_state = BUTTON_STATE_UP;
-    event = 0;
-}
-
-uint8_t Button::GetState() {
-    return state;
-}
-
-void Button::UpdateTick() {
-    old_state = state;
-    state = digitalRead(pin);
-    if( state == BUTTON_STATE_DOWN && old_state == BUTTON_STATE_UP ) {
-        event |= BUTTON_EVENT_PRESSED;
-
+    if( digitalRead(BUTTON_PIN) == HIGH ) {
+        if( !swTimer[SW_TIMER_BUTTON].isActive() ) {
+            Serial.print("press");
+            swTimer[SW_TIMER_BUTTON].Init(true,3,3);
+            btn_evt = BUTTON_EVENT_SHORT_PRESS;
+            Serial.print(btn_evt);
+        } else if( swTimer[SW_TIMER_BUTTON].IsTriggered(true) ) {
+            Serial.print("B_timeout_");
+            switch(btn_evt) {
+                case BUTTON_EVENT_SHORT_PRESS: 
+                    btn_evt = BUTTON_EVENT_MIDDLE_PRESS;
+                    swTimer[SW_TIMER_BUTTON].Init(true,7,7);
+                    Serial.print(btn_evt);
+                    break;
+                case BUTTON_EVENT_MIDDLE_PRESS: 
+                    btn_evt = BUTTON_EVENT_LONG_PRESS;
+                    swTimer[SW_TIMER_BUTTON].Init(true,10,10);
+                    Serial.print(btn_evt);
+                    break;
+                case BUTTON_EVENT_LONG_PRESS: 
+                    btn_evt = BUTTON_EVENT_LONG_LONG_PRESS;
+                    swTimer[SW_TIMER_BUTTON].Init(true,10,10);
+                    Serial.print(btn_evt);
+                    break;
+            }
+        }
+    } else {
+        if( swTimer[SW_TIMER_BUTTON].isActive() ) {
+            swTimer[SW_TIMER_BUTTON].Init(false,0,0);
+            button_event = btn_evt;
+            btn_evt = 0;
+        }
     }
+    switch( button_event ) {
+        case BUTTON_EVENT_SHORT_PRESS: Serial.println("Button SHORT press"); break;
+        case BUTTON_EVENT_MIDDLE_PRESS: Serial.println("Button MIDDLE press"); break;
+        case BUTTON_EVENT_LONG_PRESS: Serial.println("Button LONG press"); config_setWiFiSettings("",""); break;
+        case BUTTON_EVENT_LONG_LONG_PRESS: Serial.println("Button LONG LONG press"); break;
+    }
+
 }

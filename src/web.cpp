@@ -374,6 +374,73 @@ bool GetParamValue(AsyncWebServerRequest *request, const char *name, String& val
     return false;
 }
 
+void AddServerFastTelemetry() {
+    server.on("/getFastTelemetry", HTTP_GET, [](AsyncWebServerRequest *request){
+        int8_t hours = 0;
+        int8_t minutes = 0;
+        int8_t seconds = 0;
+        if (time_in_sync_with_ntp)
+        {
+            unsigned long time =
+                (unsigned long)ntp_time + 
+                (unsigned long)rtc_SecondsSinceUpdate;
+            hours = (time / (60 * 60)) % 24;
+            minutes = (time / 60) % 60;
+            seconds = time % 60;
+            //Serial.printf("Time from NTP: %lu => %d:%d (%lu)\r\n", ntp_time, hours, minutes, time);
+        }
+        else
+        {
+            DateTime dt = rtc_dt +
+                            TimeSpan(rtc_SecondsSinceUpdate / (60*60*24),
+                                    (rtc_SecondsSinceUpdate / (60*60)) % 24,
+                                    (rtc_SecondsSinceUpdate / 60) % 60,
+                                    rtc_SecondsSinceUpdate % 60);
+            hours = dt.hour();
+            minutes = dt.minute();
+            seconds = dt.second();
+            //Serial.printf("Time from RTC: %d:%d\r\n", hours, minutes);
+        }
+        String response_str = String();
+
+        // Hours
+        response_str = "{ \"Hours\":\"";
+        response_str +=  hours;
+        response_str += "\",";
+        // Minutes
+        response_str += "\"Minutes\":\"";
+        response_str += minutes;
+        response_str += "\",";
+        // Seconds
+        response_str += "\"Seconds\":\"";
+        response_str += seconds;
+        response_str += "\",";
+        // Hous offset
+        response_str += "\"HourOffset\":\"";
+        response_str +=  config_clock.hour_offset;
+        response_str += "\",";
+        // Minute offset
+        response_str += "\"MinuteOffset\":\"";
+        response_str += config_clock.minute_offset;
+        response_str += "\",";
+
+        // Seconds until next pressure connection
+        response_str += "\"SecondsUntilPressureCollection\":\"";
+        response_str += swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter();
+        response_str += "\",";
+        // Pressure
+        response_str += "\"Pressure\":\"";
+        response_str += pressure;
+        response_str += "\",";
+        // Temperature
+        response_str += "\"Temperature\":\"";
+        response_str += temperature;
+        response_str += "\"}";
+
+        request->send_P(200, "text/plain", response_str.c_str());
+    });
+}
+
 void createWebServer(int webtype)
 {
     if( webtype == WEB_PAGES_FOR_AP ) 
@@ -384,42 +451,22 @@ void createWebServer(int webtype)
             Serial.println("Accessing root page...");
             request->send(LittleFS, "/index-ap.html", "text/html", false, processor);
         });
+
         Serial.print(".");
         server.onNotFound([](AsyncWebServerRequest *request) {
             Serial.println("Handle not found page...");
             handleWebRequests(request);
         }); // Set server all paths are not found so we can handle as per URI 
 
-        server.on("/getTime", HTTP_GET, [](AsyncWebServerRequest *request){
-            // if( !request->authenticate(http_username,http_password) )
-            //     return request->requestAuthentication();
-            char time_s[15];
-            sprintf(time_s, "%lld", (long long)rtc_dt.secondstime()+RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate);
-            request->send_P(200, "text/plain", time_s);
-        });
+        Serial.print(".");
+        AddServerFastTelemetry();
 
-        server.on("/getTimeOffset", HTTP_GET, [](AsyncWebServerRequest *request){
-            // if( !request->authenticate(http_username,http_password) )
-            //     return request->requestAuthentication();
-            char offset_min[10];
-            sprintf(offset_min, "%d", config_clock.hour_offset*60+config_clock.minute_offset);
-            request->send_P(200, "text/plain", offset_min);
-        });
-
-        server.on("/getPressure", HTTP_GET, [](AsyncWebServerRequest *request){
+        server.on("/getPressureHistory", HTTP_GET, [](AsyncWebServerRequest *request){
             // if( !request->authenticate(http_username,http_password) )
             //     return request->requestAuthentication();
             char pressure_str[10];
             sprintf(pressure_str, "%3.1f", pressure);
             request->send_P(200, "text/plain", pressure_str);
-        });
-
-        server.on("/getTemperature", HTTP_GET, [](AsyncWebServerRequest *request){
-            // if( !request->authenticate(http_username,http_password) )
-            //     return request->requestAuthentication();
-            char temperature_str[10];
-            sprintf(temperature_str, "%3.1f", temperature);
-            request->send_P(200, "text/plain", temperature_str);
         });
 
         server.on("/set_time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -484,7 +531,7 @@ void createWebServer(int webtype)
             Serial.println("Store network params...");
             String param1, param2;
             bool param_saved = false;
-            if( GetParamValue(request,"ssid",param1) && GetParamValue(request,"pass",param1) ) {
+            if( GetParamValue(request,"ssid",param1) && GetParamValue(request,"pass",param2) ) {
                 if( param1.length() > 0 ) 
                 {
                     Serial.printf(
@@ -495,7 +542,7 @@ void createWebServer(int webtype)
                     param_saved = true;
                 }
             }
-            if( GetParamValue(request,"auth-username",param1) && GetParamValue(request,"auth-pass",param1) ) {
+            if( GetParamValue(request,"auth-username",param1) && GetParamValue(request,"auth-pass",param2) ) {
                 if( param1.length() > 0 && param2.length() > 0 ) 
                 {
                     Serial.printf(
@@ -536,82 +583,6 @@ void createWebServer(int webtype)
             //request->send(LittleFS, "/index-ap.html", "text/html");
             request->send(LittleFS, "/index-dev.html", "text/html", false, processor);
         });
-
-        server.on("/getFastTelemetry", HTTP_GET, [](AsyncWebServerRequest *request){
-            int8_t hours = 0;
-            int8_t minutes = 0;
-            int8_t seconds = 0;
-            // int8_t seconds = 0;
-            if (time_in_sync_with_ntp)
-            {
-                unsigned long time = /*timeClient.getRawEpochTime()*/ 
-                    (unsigned long)ntp_time + 
-                    //(unsigned long)config_clock.hour_offset * 3600 + 
-                    //(unsigned long)config_clock.minute_offset * 60 + 
-                    (unsigned long)rtc_SecondsSinceUpdate;
-                hours = (time / (60 * 60)) % 24;
-                minutes = (time / 60) % 60;
-                seconds = time % 60;
-                //Serial.printf("Time from NTP: %lu => %d:%d (%lu)\r\n", ntp_time, hours, minutes, time);
-            }
-            else
-            {
-                DateTime dt = rtc_dt +
-                              TimeSpan(rtc_SecondsSinceUpdate / (60 * 60 * 24),
-                                       /*config_clock.hour_offset +*/ (rtc_SecondsSinceUpdate / 3600) % 24,
-                                       /*config_clock.minute_offset +*/ (rtc_SecondsSinceUpdate / 60) % 60,
-                                       rtc_SecondsSinceUpdate % 60);
-                hours = dt.hour();
-                minutes = dt.minute();
-                seconds = dt.second();
-                //Serial.printf("Time from RTC: %d:%d\r\n", hours, minutes);
-            }
-            String response_str = String();
-
-            // Hours
-            response_str = "{ \"Hours\":\"";
-            response_str +=  hours;
-            response_str += "\",";
-            // Minutes
-            response_str += "{ \"Minutes\":\"";
-            response_str += minutes;
-            response_str += "\",";
-            // Seconds
-            response_str += "{ \"Seconds\":\"";
-            response_str += seconds;
-            response_str += "\",";
-            // Hous offset
-            response_str = "{ \"HourOffset\":\"";
-            response_str +=  config_clock.hour_offset;
-            response_str += "\",";
-            // Minute offset
-            response_str += "{ \"MinuteOffset\":\"";
-            response_str += config_clock.minute_offset;
-            response_str += "\",";
-
-            // Seconds until next pressure connection
-            response_str += "{ \"SecondsUntilPressureCollection\":\"";
-            response_str += swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter();
-            response_str += "\",";
-            // Pressure
-            response_str += "{ \"Pressure\":\"";
-            response_str += pressure;
-            response_str += "\",";
-            // Temperature
-            response_str += "{ \"Temperature\":\"";
-            response_str += temperature;
-            response_str += "\"}";
-
-            request->send_P(200, "text/plain", response_str.c_str());
-        });
-
-        server.on("/getTimeOffset", HTTP_GET, [](AsyncWebServerRequest *request){
-            // if( !request->authenticate(http_username,http_password) )
-            //     return request->requestAuthentication();
-            char offset_min[10];
-            sprintf(offset_min, "%d", config_clock.hour_offset*60+config_clock.minute_offset);
-            request->send_P(200, "text/plain", offset_min);
-        });
         
         Serial.print(".");
         server.onNotFound([](AsyncWebServerRequest *request) {
@@ -619,21 +590,18 @@ void createWebServer(int webtype)
             Serial.println("Handle not found page...");
             handleWebRequests(request);
         }); // Set server all paths are not found so we can handle as per URI 
+
+        Serial.print(".");
+        AddServerFastTelemetry();
        
-
-        server.on("/getTemperature", HTTP_GET, [](AsyncWebServerRequest *request){
-            // if( !request->authenticate(http_username,http_password) )
-            //     return request->requestAuthentication();
-            char temperature_str[10];
-            sprintf(temperature_str, "%3.1f", temperature);
-            request->send_P(200, "text/plain", temperature_str);
-        });
-
-        server.on("/getPressure", HTTP_GET, [](AsyncWebServerRequest *request){
+        Serial.print(".");
+        server.on("/getPressureHistory", HTTP_GET, [](AsyncWebServerRequest *request){
             // if( !request->authenticate(http_username,http_password) )
             //     return request->requestAuthentication();
             request->send_P( 200, "text/plain", pressure_json_history.c_str() );
         });
+        
+        Serial.print(".");
         server.on("/set_time_offset", HTTP_GET, [](AsyncWebServerRequest *request){
             String param1, param2;
             Serial.print("URL: ");
