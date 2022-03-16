@@ -186,8 +186,13 @@ void display_Time(byte hours, byte minutes, byte seconds, byte format) {
 }
 
 void display_PrintStarting(void) {
+    uint16_t ver_index = 0;
     for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
-        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
+        if( i >= (digits[DISPLAY_STARTING].size-sizeof(version)) ){
+            ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) | version[ver_index++] );
+        } else {
+            ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
+        }
     }
     display_FixRotation(display_orientation);
     ledMatrix.commit();
