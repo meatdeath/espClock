@@ -155,10 +155,12 @@ enum dispays_en
 {
     DISPLAY_CLOCK = 0,
     DISPLAY_TEMPERATURE,
-    DISPLAY_PRESSURE
+    DISPLAY_PRESSURE,
+    DISPLAY_STR_CLOCK,
+    DISPLAY_STR_VERSION
 };
 
-uint8_t show_display = DISPLAY_CLOCK;
+uint8_t show_display = DISPLAY_STR_CLOCK;
 uint8_t last_shown_display = DISPLAY_CLOCK;
 uint8_t intensity = 15;
 uint8_t measured_intensity = 1;
@@ -350,15 +352,15 @@ void loop()
             display_Pressure((uint16_t)(pressure + .5));
         last_shown_display = DISPLAY_PRESSURE;
         break;
-    case DISPLAY_CLOCK_STR:
-        if (last_shown_display != DISPLAY_CLOCK_STR)
+    case DISPLAY_STR_CLOCK:
+        if (last_shown_display != DISPLAY_STR_CLOCK)
             display_ClockString();
-        last_shown_display = DISPLAY_CLOCK_STR;
+        last_shown_display = DISPLAY_STR_CLOCK;
         break;
-    case DISPLAY_VERSION:
-        if (last_shown_display != DISPLAY_VERSION)
+    case DISPLAY_STR_VERSION:
+        if (last_shown_display != DISPLAY_STR_VERSION)
             display_Version();
-        last_shown_display = DISPLAY_VERSION;
+        last_shown_display = DISPLAY_STR_VERSION;
         break;
     }
 
@@ -384,11 +386,11 @@ void loop()
             show_display = DISPLAY_CLOCK;
             swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(TEMPERATURE_SHOW_TIME);
             break;
-        case DISPLAY_CLOCK_STR:
-            show_display = DISPLAY_VERSION;
-            swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(2);
+        case DISPLAY_STR_CLOCK:
+            show_display = DISPLAY_STR_VERSION;
+            swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(1);
             break;
-        case DISPLAY_VERSION:
+        case DISPLAY_STR_VERSION:
             show_display = DISPLAY_CLOCK;
             swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(TEMPERATURE_SHOW_TIME);
             break;
