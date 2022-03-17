@@ -350,6 +350,16 @@ void loop()
             display_Pressure((uint16_t)(pressure + .5));
         last_shown_display = DISPLAY_PRESSURE;
         break;
+    case DISPLAY_CLOCK_STR:
+        if (last_shown_display != DISPLAY_CLOCK_STR)
+            display_ClockString();
+        last_shown_display = DISPLAY_CLOCK_STR;
+        break;
+    case DISPLAY_VERSION:
+        if (last_shown_display != DISPLAY_VERSION)
+            display_Version();
+        last_shown_display = DISPLAY_VERSION;
+        break;
     }
 
     if (swTimer[SW_TIMER_SENSOR_UPDATE].IsTriggered(true))
@@ -371,6 +381,14 @@ void loop()
             swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(CLOCK_SHOW_TIME);
             break;
         case DISPLAY_PRESSURE:
+            show_display = DISPLAY_CLOCK;
+            swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(TEMPERATURE_SHOW_TIME);
+            break;
+        case DISPLAY_CLOCK_STR:
+            show_display = DISPLAY_VERSION;
+            swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(2);
+            break;
+        case DISPLAY_VERSION:
             show_display = DISPLAY_CLOCK;
             swTimer[SW_TIMER_SWITCH_DISPLAY].SetUpdateTime(TEMPERATURE_SHOW_TIME);
             break;

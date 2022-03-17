@@ -57,9 +57,9 @@ void display_SetBrightness(uint8_t percentage) {
 void display_Pressure(uint16_t pressure) {
     uint8_t i, offset = 0;
     uint8_t symbol[] = {
-        (pressure/100)%10,
-        (pressure/10)%10,
-        pressure%10,
+        (uint8_t)((pressure/100)%10),
+        (uint8_t)((pressure/10)%10),
+        (uint8_t)(pressure%10),
         DISPLAY_MM
     };
     uint8_t size;
@@ -186,13 +186,29 @@ void display_Time(byte hours, byte minutes, byte seconds, byte format) {
 }
 
 void display_PrintStarting(void) {
-    uint16_t ver_index = 0;
+    //uint16_t ver_index = 0;
     for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
-        if( i >= (digits[DISPLAY_STARTING].size-sizeof(version)) ){
-            ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) | version[ver_index++] );
-        } else {
+        // if( i >= (digits[DISPLAY_STARTING].size-sizeof(version)) ){
+        //     ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) | version[ver_index++] );
+        // } else {
             ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
-        }
+        // }
+    }
+    display_FixRotation(display_orientation);
+    ledMatrix.commit();
+}
+
+void display_ClockString(void) {
+    for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_CLOCK_STR].size)); i++ ) {
+        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_CLOCK_STR].array[i])) );
+    }
+    display_FixRotation(display_orientation);
+    ledMatrix.commit();
+}
+
+void display_Version(void) {
+    for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_VERSION].size)); i++ ) {
+        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_VERSION].array[i])) );
     }
     display_FixRotation(display_orientation);
     ledMatrix.commit();
