@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 //#define ENABLE_DNS
-#define ENABLE_MDNS
+//#define ENABLE_MDNS
 
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
