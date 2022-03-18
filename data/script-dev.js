@@ -64,8 +64,8 @@ function getFastTelemetry() {
         if (this.readyState == 4 && this.status == 200) 
         {
             var telemetry = JSON.parse(this.responseText);
-            document.getElementById("pressure-text").innerText = telemetry.Pressure;
-            document.getElementById("temperature-text").innerText = telemetry.Temperature;
+            document.getElementById("pressure-text-value").innerText = telemetry.Pressure;
+            document.getElementById("temperature-text-value").innerText = telemetry.Temperature;
             document.getElementById("utc-time-string").innerText = 
                 ("0"+telemetry.Hours).slice(-2) + ":" + ("0"+telemetry.Minutes).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
             var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
@@ -161,6 +161,26 @@ function updatePressureGraph() {
     }
 }
 
+var current_tab = 0;
+
+function updateTabs() {
+    tabs = document.getElementsByClassName("tab");
+    Array.from(tabs).forEach(function(tab,i) {
+        tab.classList.remove("active");
+        if(i==current_tab) tab.classList.add("active");
+    });
+    tabcontents = document.getElementsByClassName("tab-content");
+    Array.from(tabcontents).forEach(function(tabcontent,i) {
+        tabcontent.setAttribute("hidden","");
+        if(i==current_tab) tabcontent.removeAttribute("hidden");
+    });
+}
+
+function tabClick(tab) {
+    current_tab = tab;
+    updateTabs();
+}
+
 window.onload = function() {
     pressure_chart = new Chart('pressureChart', {
         type: 'line',
@@ -213,6 +233,10 @@ window.onload = function() {
             scales: {
                 yAxes: [{
                     id: 'pressure-axis',
+                    scaleLabel: {
+                        display: true, 
+                        labelString: "Pressure, mm"
+                    },
                     ticks: {
                         suggestedMin: 730,
                         suggestedMax: 770
@@ -220,11 +244,17 @@ window.onload = function() {
                 }],
                 xAxes: [{
                     id: 'time-axis',
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time, h'
+                    },
                     //type: 'linear',
                     ticks:{
                         callback:function(label){
-                            return label+"h";
-                        }
+                            return label;
+                        },
+                        maxRotation: 0,
+                        minRotation: 0
                     }
                 },
                 {
@@ -265,5 +295,6 @@ window.onload = function() {
     getPressureHistory();
     getFastTelemetry();
     setInterval( getPressureHistory, 5000 );
+    updateTabs();
 }
 

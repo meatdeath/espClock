@@ -36,8 +36,8 @@ function getFastTelemetry() {
         if (this.readyState == 4 && this.status == 200) 
         {
             var telemetry = JSON.parse(this.responseText);
-            document.getElementById("pressure-text").innerText = telemetry.Pressure;
-            document.getElementById("temperature-text").innerText = telemetry.Temperature;
+            document.getElementById("pressure-text-value").innerText = telemetry.Pressure;
+            document.getElementById("temperature-text-value").innerText = telemetry.Temperature;
             document.getElementById("utc-time-string").innerText = 
                 ("0"+telemetry.Hours).slice(-2) + ":" + ("0"+telemetry.Minutes).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
             var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
@@ -74,7 +74,7 @@ function getPressureHistory()
         if (this.readyState == 4 && this.status == 200) 
         {
             var pressure = this.responseText;
-            document.getElementById("pressure-text").innerText = pressure;
+            document.getElementById("pressure-text-value").innerText = pressure;
         }
     };
     xhttp.open('GET', 'getPressureHistory', true);

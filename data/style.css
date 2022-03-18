@@ -11,3 +11,13 @@ td,th {padding: 0px 5px;}
 th {background: gray; text-align: left;}
 td {border-bottom: 1px solid lightgray;}
 td>div {text-align: center;}
+
+#tabs {height:30px;display:flex;}
+.tab {cursor:pointer; display:inline; border: 1px solid gray; border-radius: 5px 5px 0px 0px; padding:4px 16px; background-color: lightgray}
+.tab.active { background-color:white; border-bottom:0px;cursor:default; }
+.tab>h4 {display:inline; margin:0; }
+.tab-fill {width:100%; border-bottom: 1px solid gray}
+.telemetry-item {display:inline-block; padding:0px 20px; font-weight:800;font-size:larger}
+#telemetry-tab-content {padding:20px 0px; text-align:center}
+.fa-tachometer-alt {color:mediumvioletred}
+.fa-temperature-high {color:green}

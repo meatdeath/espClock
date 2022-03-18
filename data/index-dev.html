@@ -2,56 +2,74 @@
 <html>
     <head>
         <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js'></script>
+        <script src="https://kit.fontawesome.com/0cd96103d4.js" crossorigin="anonymous"></script>
         <script src="script-dev.js"></script>
         <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
     </head>
     <body>
         <div id='page'>
             <h1>ESPClock</h1>
-            <h3>Pressure history</h3>
-            <p>
-                <canvas id='pressureChart'></canvas>
-            </p>
-            <div>
-                <p>Pressure: <span id="pressure-text">%PRESSURE%</span>mm</p>
-                <p>Temperature: <span id="temperature-text">%TEMPERATURE%</span>&#8451;</p>
+            <div id="tabs">
+                <div id="telemetry-tab" class="tab"><h4>Telemetry</h4></div>
+                <div id="time-tab" class="tab"><h4>Time</h4></div>
+                <div id="network-tab" class="tab"><h4>Network</h4></div>
+                <div id="maintenance-tab" class="tab"><h4>Maintenance</h4></div>
+                <div class="tab-fill"></div>
+            </div>
+            <div id="telemetry-tab-content" class="tab-content">
+                <div class="telemetry-item"><i class="fas fa-tachometer-alt"></i> <span id="pressure-text"><span id="pressure-text-value">%PRESSURE%</span>mm</span></div>
+                <div class="telemetry-item"><i class="fas fa-temperature-high"></i> <span id="temperature-text"><span id="temperature-text-value">%TEMPERATURE%</span>&#8451;</span></div>
+                <p>
+                    <canvas id='pressureChart'></canvas>
+                </p>
                 <p>Time until next pressure collection: <span id="pressure-collection-time-left-text">%PRESSURECOLLECTTIMELEFT%</span></p>
             </div>
-            <h3>Time correction</h3>
+            
+            <div id="time-tab-content" class="tab-content">
+                <h3>Time correction</h3>
 
-            <form>
-                <p class='time_offset_section'>
-                    <label for='hour_offset'>Hours</label>
-                    <input id='hour_offset' type='number' name='hour_offset' min='-12' max='12' value='%HOUR_OFFSET%'>
-                </p>
-                <p class='time_offset_section'>
-                    <label for='minute_offset'>Minutes</label>
-                    <input id='minute_offset' type='number' name='minute_offset' min='0' max='59' value='%MINUTE_OFFSET%'>
-                </p>
-                <p class='time_offset_section'>
-                    <button onclick='setOffset(this);'>Update time offset</button>
-                </p>
-            </form>
-            <table>
-              <tr>
-                <td>UTC Time:</td>
-                <td><span id='utc-time-string'></span></td>
-              </tr>
-              <tr>
-                <td>Corrected Time:</td>
-                <td><span id='corrected-time-string'></span></td>
-              </tr>
-              <tr>
-                <td>Current time offset: </td>
-                <td><span id='time-offset-string'></span></td>
-              </tr>
-            </table>
+                <form>
+                    <p class='time_offset_section'>
+                        <label for='hour_offset'>Hours</label>
+                        <input id='hour_offset' type='number' name='hour_offset' min='-12' max='12' value='%HOUR_OFFSET%'>
+                    </p>
+                    <p class='time_offset_section'>
+                        <label for='minute_offset'>Minutes</label>
+                        <input id='minute_offset' type='number' name='minute_offset' min='0' max='59' value='%MINUTE_OFFSET%'>
+                    </p>
+                    <p class='time_offset_section'>
+                        <button onclick='setOffset(this);'>Update time offset</button>
+                    </p>
+                </form>
+                <table>
+                <tr>
+                    <td>UTC Time:</td>
+                    <td><span id='utc-time-string'></span></td>
+                </tr>
+                <tr>
+                    <td>Corrected Time:</td>
+                    <td><span id='corrected-time-string'></span></td>
+                </tr>
+                <tr>
+                    <td>Current time offset: </td>
+                    <td><span id='time-offset-string'></span></td>
+                </tr>
+                </table>
+            </div>
 
-            <hr>
-            <p>IP address: <span id="device-ip">%LOCAL_IP_ADDRESS%</span></p>
-            <br>
-            <a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>
-            <br>
+            
+            <div id="network-tab-content" class="tab-content">
+                <hr>
+                <p>IP address: <span id="device-ip">%LOCAL_IP_ADDRESS%</span></p>
+                <br>
+                <a href='/clear_wifi_settings' class='btn btn-primary'>Clear WiFi settings and restart in AP mode</a>
+                <br>
+            </div>
+            
+            <div id="maintenance-tab-content" class="tab-content">
+                Maintenance
+            </div>
+
             <!--
             <br>
             <a href='/update' class='btn btn-primary'>Firmware update</a>
@@ -63,3 +81,9 @@
         </div>
     </body>
 </html>
+<script>
+    document.getElementById("telemetry-tab").onclick = function() {tabClick(0)};
+    document.getElementById("time-tab").onclick = function() {tabClick(1)};
+    document.getElementById("network-tab").onclick = function() {tabClick(2)};
+    document.getElementById("maintenance-tab").onclick = function() {tabClick(3)};
+</script>
