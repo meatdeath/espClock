@@ -6,7 +6,7 @@
 #include "RTClib.h"
 #include "pressure_history.h"
 
-#define RTC_SQW_PIN 12
+#define RTC_SQW_PIN 0
 
 void rtc_Init(void);
 void rtc_GetDT(DateTime *dst_dt);

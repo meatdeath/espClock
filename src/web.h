@@ -21,7 +21,7 @@
 #include <ESPAsyncDNSServer.h>
 #endif
 
-#define LED_PIN         2
+#define LED_PIN         D9
 #define ledInit()       pinMode(LED_PIN,OUTPUT)
 #define ledOn()         digitalWrite(LED_PIN, LOW)
 #define ledOff()        digitalWrite(LED_PIN, HIGH)

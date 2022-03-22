@@ -186,13 +186,8 @@ void display_Time(byte hours, byte minutes, byte seconds, byte format) {
 }
 
 void display_PrintStarting(void) {
-    //uint16_t ver_index = 0;
     for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_STARTING].size)); i++ ) {
-        // if( i >= (digits[DISPLAY_STARTING].size-sizeof(version)) ){
-        //     ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) | version[ver_index++] );
-        // } else {
-            ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
-        // }
+        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_STARTING].array[i])) );
     }
     display_FixRotation(display_orientation);
     ledMatrix.commit();
@@ -207,8 +202,24 @@ void display_ClockString(void) {
 }
 
 void display_Version(void) {
-    for( byte i = 0; i < pgm_read_byte(&(digits[DISPLAY_VERSION].size)); i++ ) {
-        ledMatrix.setColumn(i, pgm_read_byte(&(digits[DISPLAY_VERSION].array[i])) );
+    const byte v_dot[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xfc,0x94,0x94,0x94,0x68,0x00,0x80,0x00};
+    byte j = 0;
+    for( byte i = 0; i < sizeof(v_dot); i++, j++ ) {
+        ledMatrix.setColumn(j, v_dot[i]);
+    }
+    for( byte i = 0; i < pgm_read_byte(&(digits[VERSION_MAJOR].size)); i++, j++ ) {
+        ledMatrix.setColumn(j, pgm_read_byte(&(digits[VERSION_MAJOR].array[i])) );
+    }
+    ledMatrix.setColumn(j++, 0x00);
+    ledMatrix.setColumn(j++, 0x80);
+    ledMatrix.setColumn(j++, 0x00);
+    
+    for( byte i = 0; i < pgm_read_byte(&(digits[VERSION_MINOR].size)); i++, j++ ) {
+        ledMatrix.setColumn(j, pgm_read_byte(&(digits[VERSION_MINOR].array[i])) );
+    }
+
+    while( j < 32 ) {
+        ledMatrix.setColumn(j++, 0x00);
     }
     display_FixRotation(display_orientation);
     ledMatrix.commit();

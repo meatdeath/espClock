@@ -7,8 +7,7 @@
 
 #define NUMBER_OF_DEVICES 4
 
-#define CS_PIN 3
-
+#define CS_PIN 15
 //#define HIDE_HOUR_LEADING_ZERO
 
 #pragma pack(push,1)
@@ -38,17 +37,8 @@ typedef struct _digits_st {
 //     },    // Zapusk
 // };
 
-const uint8_t version[9] = { // 0.1
-    0b00001110,
-    0b00010001,
-    0b00001110,
-    0b00000000,
-    0b00010000,
-    0b00000000,
-    0b00011111,
-    0b00000000,
-    0b00000000
-};
+#define VERSION_MAJOR   1
+#define VERSION_MINOR   1
 
 const digits_t digits [] PROGMEM = {
     { { 0b01111110, 0b10000001, 0b10000001, 0b10000001, 0b01111110 }, 5 },   //0
@@ -81,12 +71,6 @@ const digits_t digits [] PROGMEM = {
         }, 32
 
     },
-    {       // Version
-        {
-            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xfc,0x94,0x94,0x94,0x68,0x00,0x80,0x00,0x04,
-            0x02,0xff,0x00,0x80,0x00,0x7e,0x81,0x81,0x81,0x7e,0x00,0x00,0x00,0x00,0x00,0x00
-        }, 32
-    },
     {   // -
         {
             0x10, 0x10, 0x10
@@ -110,7 +94,6 @@ enum __display_symbols {
     DISPLAY_SYMBOL_ZAPUSK,
     DISPLAY_STARTING,
     DISPLAY_CLOCK_STR,
-    DISPLAY_VERSION,
     DISPLAY_MINUS,
     DISPLAY_CELCIUS,
     DISPLAY_MM
