@@ -103,11 +103,13 @@ void wifi_processing(void) {
             launchWeb(WEB_PAGES_NORMAL);
             timeClient.begin();
             time_sync_with_ntp_enabled = true; 
+            ledOn();
         } else {
             static int counter = 0;
             if( counter == 500 ) {
                 Serial.print(".");
                 counter = 0;
+                ledToggle();
             }
             counter++;
         }
@@ -118,6 +120,7 @@ void wifi_processing(void) {
             WifiState = STATE_WIFI_IDLE;
             time_sync_with_ntp_enabled = false;
             time_in_sync_with_ntp = false;
+            ledOff();
         } else {
 #ifdef ENABLE_MDNS
             MDNS.update();

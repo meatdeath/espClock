@@ -7,7 +7,7 @@
 
 #define NUMBER_OF_DEVICES 4
 
-#define CS_PIN 2
+#define CS_PIN 3
 
 //#define HIDE_HOUR_LEADING_ZERO
 

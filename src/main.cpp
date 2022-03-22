@@ -47,6 +47,15 @@ void read_bmp_sensor()
 
 void setup()
 {
+    // pinMode(2,OUTPUT);
+    // while(1) {
+    //     delay(100);
+    //     digitalWrite(2, LOW);
+    //     delay(100);
+    //     digitalWrite(2, HIGH);
+    // }
+    ledInit();
+    ledOff();
 
     pinMode(RTC_SQW_PIN, INPUT);
     delay(1000);

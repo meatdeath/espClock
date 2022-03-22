@@ -21,6 +21,12 @@
 #include <ESPAsyncDNSServer.h>
 #endif
 
+#define LED_PIN         2
+#define ledInit()       pinMode(LED_PIN,OUTPUT)
+#define ledOn()         digitalWrite(LED_PIN, LOW)
+#define ledOff()        digitalWrite(LED_PIN, HIGH)
+#define ledToggle()     digitalWrite(LED_PIN, !digitalRead(LED_PIN))
+
 enum _web_pages_en { 
     WEB_PAGES_NORMAL = 0,
     WEB_PAGES_FOR_AP  
