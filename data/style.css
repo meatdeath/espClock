@@ -13,26 +13,25 @@ th {background: gray; text-align: left;}
 td>div {text-align: center;}
 
 #tabs {height:30px;display:flex;}
-.tab {cursor:pointer; display:inline; border: 1px solid gray; border-radius: 5px 5px 0px 0px; padding:4px 16px; background-color: lightgray}
-.tab.active { background-color:white; border-bottom:0px;cursor:default; }
-.tab>h4 {display:inline; margin:0; }
-.tab-fill {width:100%; border-bottom: 1px solid gray}
-.telemetry-item {display:inline-block; padding:0px 20px; font-weight:800;font-size:larger}
-#telemetry-tab-content {padding:20px 0px; text-align:center}
-.fa-tachometer-alt {color:mediumvioletred}
-.fa-temperature-high {color:green}
+.tab {cursor:pointer; display:inline; border: 1px solid gray; border-radius: 5px 5px 0px 0px; padding:4px 16px; background-color: lightgray;}
+.tab.active { background-color:white; border-bottom:0px;cursor:default;}
+.tab>h4 {display:inline; margin:0;}
+.tab-fill {width:100%%; border-bottom:1px solid gray;}
+.telemetry-item {display:inline-block; padding:0px 20px; font-weight:800;font-size:larger;}
+#telemetry-tab-content {padding:20px 0px; text-align:center;}
+.fa-tachometer-alt {color:mediumvioletred;}
+.fa-temperature-high {color:green;}
+#time-zone-selector {width:100%%;}
+#clock-table {margin: auto;}
 
 .analogClockContainer {
     position: relative;
     margin: auto;
     height: 20vw;
-    /*to make the height and width responsive*/
     width: 20vw;
-    background: url(clock.jpg) no-repeat;
-    /*setting our background image*/
-    background-size: 100%;
+    background:url('https://upload.wikimedia.org/wikipedia/commons/0/02/Analogue_clock_face.svg');
+    background-size: 100%%;
 }
-  
 .analogClockHour,
 .analogClockMinute,
 .analogClockSecond {
@@ -43,26 +42,26 @@ td>div {text-align: center;}
 }
   
 .analogClockHour {
-    width: 3%;
-    height: 25%;
-    top: 25%;
-    left: 48.85%;
+    width: 3%%;
+    height: 25%%;
+    top: 25%%;
+    left: 48.5%%;
     opacity: 0.8;
 }
   
 .analogClockMinute {
-    width: 2%;
-    height: 30%;
-    top: 19%;
-    left: 48.9%;
+    width: 2%%;
+    height: 30%%;
+    top: 20%%;
+    left: 49%%;
     opacity: 0.8;
 }
   
 .analogClockSecond {
-    width: 1%;
-    height: 40%;
-    top: 9%;
-    left: 49.25%;
+    width: 1%%;
+    height: 40%%;
+    top: 10%%;
+    left: 49.5%%;
     opacity: 0.8;
     background-color: red;
 }

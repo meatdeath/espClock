@@ -37,6 +37,14 @@ function getFastTelemetry() {
             document.getElementById("temperature-text-value").innerText = telemetry.Temperature;
             document.getElementById("utc-time-string").innerText = 
                 ("0"+telemetry.Hours).slice(-2) + ":" + ("0"+telemetry.Minutes).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
+            hr_rotation = 30 * telemetry.Hours + telemetry.Minutes / 2; //converting current time
+            min_rotation = 6 * telemetry.Minutes;
+            sec_rotation = 6 * telemetry.Seconds;
+            if(sec_rotation==0) sec_rotation+=0.01;
+            analogClockUTCHour.style.transform = `rotate(${hr_rotation}deg)`;
+            analogClockUTCMinute.style.transform = `rotate(${min_rotation}deg)`;
+            analogClockUTCSecond.style.transform = `rotate(${sec_rotation}deg)`;
+
             var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
             var corr_minute = telemetry.Minutes*1 + telemetry.MinuteOffset*1;
             var corr_second = telemetry.Seconds;
@@ -50,6 +58,14 @@ function getFastTelemetry() {
 
             document.getElementById("corrected-time-string").innerText =
                 ("0"+corr_hour).slice(-2) + ":" + ("0"+corr_minute).slice(-2) + ":" + ("0"+telemetry.Seconds).slice(-2);
+
+            hr_rotation = 30 * corr_hour + corr_minute / 2; //converting current time
+            min_rotation = 6 * corr_minute;
+            sec_rotation = 6 * telemetry.Seconds;
+            if(sec_rotation==0) sec_rotation+=0.01;
+            analogClockCorrectedHour.style.transform = `rotate(${hr_rotation}deg)`;
+            analogClockCorrectedMinute.style.transform = `rotate(${min_rotation}deg)`;
+            analogClockCorrectedSecond.style.transform = `rotate(${sec_rotation}deg)`;
 
             h_offset = telemetry.HourOffset;
             m_offset = telemetry.MinuteOffset;
@@ -267,19 +283,19 @@ window.onload = function() {
     updateTabs();
 
     
-    setInterval(() => {
-        d = new Date(); //object of date()
-        hr = d.getHours();
-        min = d.getMinutes();
-        sec = d.getSeconds();
-        hr_rotation = 30 * hr + min / 2; //converting current time
-        min_rotation = 6 * min;
-        sec_rotation = 6 * sec;
-        if(sec_rotation==0) sec_rotation+=0.01;
+    // setInterval(() => {
+    //     d = new Date(); //object of date()
+    //     hr = d.getHours();
+    //     min = d.getMinutes();
+    //     sec = d.getSeconds();
+    //     hr_rotation = 30 * hr + min / 2; //converting current time
+    //     min_rotation = 6 * min;
+    //     sec_rotation = 6 * sec;
+    //     if(sec_rotation==0) sec_rotation+=0.01;
     
-        analogClockUTCHour.style.transform = `rotate(${hr_rotation}deg)`;
-        analogClockUTCMinute.style.transform = `rotate(${min_rotation}deg)`;
-        analogClockUTCSecond.style.transform = `rotate(${sec_rotation}deg)`;
-    }, 1000);
+    //     analogClockUTCHour.style.transform = `rotate(${hr_rotation}deg)`;
+    //     analogClockUTCMinute.style.transform = `rotate(${min_rotation}deg)`;
+    //     analogClockUTCSecond.style.transform = `rotate(${sec_rotation}deg)`;
+    // }, 1000);
 }
 

@@ -338,10 +338,10 @@ bool loadFromLittleFS(AsyncWebServerRequest *request){
     // else if(path.endsWith(".zip")) dataType = "application/zip";
     // else if(path.endsWith(".src")) path = path.substring(0, path.lastIndexOf("."));
     
-    // if (request->hasArg("download")) {
-    //     dataType = "application/octet-stream";
-    //     download = true;
-    // }
+    if (request->hasArg("download")) {
+        dataType = "application/octet-stream";
+        download = true;
+    }
 
     request->send(LittleFS, path, dataType, download, processor);
 

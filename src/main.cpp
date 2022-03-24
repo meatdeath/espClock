@@ -54,11 +54,11 @@ void setup()
     //     delay(100);
     //     digitalWrite(2, HIGH);
     // }
-    ledInit();
-    ledOff();
 
     pinMode(RTC_SQW_PIN, INPUT);
     delay(1000);
+    ledInit();
+    ledOff();
     Serial.begin(115200);
     delay(10);
     Serial.println();
@@ -456,3 +456,12 @@ void loop()
 //  }
 
 //----------------------------------------------------------
+
+
+/*.tab-fill {width:100%;border-bottom:1px solid gray;}
+
+background: url('https://upload.wikimedia.org/wikipedia/commons/0/02/Analogue_clock_face.svg') no-repeat;
+background-size: 100%;
+}
+  
+*/
