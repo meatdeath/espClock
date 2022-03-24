@@ -26,11 +26,29 @@
             </div>
             
             <div id="time-tab-content" class="tab-content">
-                <div id="clockContainer">
-                    <div id="hour"></div>
-                    <div id="minute"></div>
-                    <div id="second"></div>
-                </div>
+
+                <table>
+                    <tr>
+                        <td style="width: 25vw;">
+                            <p style="text-align:center">UTC Time</p>
+                            <div class="analogClockContainer">
+                                <div id="analogClockUTCHour" class="analogClockHour"></div>
+                                <div id="analogClockUTCMinute" class="analogClockMinute"></div>
+                                <div id="analogClockUTCSecond" class="analogClockSecond"></div>
+                            </div>
+                            <p id="digitalClockUtc" style="text-align:center">13:36:47</p>
+                        </td>
+                        <td style="width: 25vw;">
+                            <p style="text-align:center">Corrected Time</p>
+                            <div class="analogClockContainer">
+                                <div class="analogClockHour"></div>
+                                <div class="analogClockMinute"></div>
+                                <div class="analogClockSecond"></div>
+                            </div>
+                            <p id="digitalClockCorrected" style="text-align:center">00:00:00</p>
+                        </td>
+                    </tr>
+                </table>
 
                 <h3>Time correction</h3>
 
@@ -47,7 +65,7 @@
                         <button onclick='setOffset(this);'>Update time offset</button>
                     </p>
                 </form>
-                <table>
+                <table id="text-time-table">
                 <tr>
                     <td>UTC Time:</td>
                     <td><span id='utc-time-string'></span></td>

@@ -275,10 +275,11 @@ window.onload = function() {
         hr_rotation = 30 * hr + min / 2; //converting current time
         min_rotation = 6 * min;
         sec_rotation = 6 * sec;
+        if(sec_rotation==0) sec_rotation+=0.01;
     
-        hour.style.transform = `rotate(${hr_rotation}deg)`;
-        minute.style.transform = `rotate(${min_rotation}deg)`;
-        second.style.transform = `rotate(${sec_rotation}deg)`;
+        analogClockUTCHour.style.transform = `rotate(${hr_rotation}deg)`;
+        analogClockUTCMinute.style.transform = `rotate(${min_rotation}deg)`;
+        analogClockUTCSecond.style.transform = `rotate(${sec_rotation}deg)`;
     }, 1000);
 }
 
