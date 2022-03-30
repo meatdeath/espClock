@@ -18,7 +18,7 @@
 extEEPROM eeprom(kbits_32, 1, 64, 0x57); // device size, number of devices, page size
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP);
+NTPClient timeClient(ntpUDP,"time.google.com");
 
 volatile bool softreset = false;
 bool time_sync_with_ntp_enabled = false;

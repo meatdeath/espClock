@@ -65,3 +65,10 @@ td>div {text-align: center;}
     opacity: 0.8;
     background-color: red;
 }
+
+.time-offset-radio-inner {
+    margin-left:40px;
+}
+.time-offset-radio-outer {
+    margin-bottom:16px;
+}
