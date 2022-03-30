@@ -21,7 +21,7 @@ function setOffset() {
             m_offset = document.getElementById('minute_offset').value;
         }
     };
-    param='?hour_offset=' + h_offset + '&minute_offset=' + m_offset;
+    param='?hour_offset=' + h + '&minute_offset=' + m;
     xhttp.open('GET', '/set_time_offset'+param, true);
     xhttp.send();
 }
