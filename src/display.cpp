@@ -12,7 +12,7 @@ typedef enum display_orientation_en {
 
 LedMatrix ledMatrix = LedMatrix(NUMBER_OF_DEVICES, CS_PIN);
 
-display_orientation_t display_orientation = DISPLAY_ORIENTATION_CCW90;
+display_orientation_t display_orientation = DISPLAY_ORIENTATION_CW90;
 
 // ----------------------------------------------------------------------------
 
