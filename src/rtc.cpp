@@ -179,4 +179,22 @@ void rtc_SetEpoch(uint32_t epoch_time) {
     rtc.adjust( DateTime(epoch_time) );
 }
 
+#include <ESPDateTime.h>
+
+extern bool time_sync_with_ntp_enabled;
+extern unsigned long ntp_time;
+
+String rtc_GetTimeString() {
+    unsigned long timeinsec;
+    if( time_sync_with_ntp_enabled ) {
+        timeinsec = ntp_time + rtc_SecondsSinceUpdate;
+    } else {
+        timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
+    }
+    DateTimeClass dt;
+    dt.setTime(timeinsec,true);
+    DateTimeParts dtParts = dt.getParts();
+    return dtParts.format("%Y-%m-%d %H:%M:%S");
+}
+
 //-----------------------------------------------------------------------------

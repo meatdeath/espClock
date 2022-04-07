@@ -13,6 +13,7 @@ void rtc_GetDT(DateTime *dst_dt);
 void rtc_SetEpoch(uint32_t epoch_time);
 bool rtc_LocalTimeRequireProcessing(void);
 void rtc_SetLocalTimeProcessed(void);
+String rtc_GetTimeString();
 
 #define RTC_SECONDS_2000_01_01   946684800L
 

@@ -302,7 +302,7 @@ void loop()
         Serial.print("Time to collect pressure history: ");
         if (time_in_sync_with_ntp)
         {
-            timeinsec = /*timeClient.getRawEpochTime()*/ ntp_time + rtc_SecondsSinceUpdate;
+            timeinsec = ntp_time + rtc_SecondsSinceUpdate;
             Serial.printf("Time to collect pressure history from NTP %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         else
