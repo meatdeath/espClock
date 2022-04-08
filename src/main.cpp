@@ -11,6 +11,7 @@
 #include "web.h"
 #include "button.h"
 #include "pressure_history.h"
+#include "filelog.h"
 
 #include <NTPClient.h>
 #include <extEEPROM.h>
@@ -96,7 +97,7 @@ void setup()
     rtc_GetDT(&rtc_dt);
     Serial.printf("RTC time: %02d:%02d:%02d\r\n", rtc_dt.hour(), rtc_dt.minute(), rtc_dt.second());
 
-    UpdatePressureCollectionTimer(rtc_dt.secondstime());
+    UpdatePressureCollectionTimer(rtc_dt.unixtime());
     Serial.printf("Next pressure collection in %d seconds\r\n", swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter());
 
     Serial.print("Init BMP280...");
@@ -144,8 +145,10 @@ void setup()
 
     //Serial.println("Restore history...");
     unsigned long time;
-    time = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
+    time = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
     eeprom_restore_pressure_history(time);
+
+    Log.Init();
 
     //Serial.printf("GMT time synched with RTC module: %lu\r\n", time);
     web_init();
@@ -201,43 +204,53 @@ void loop()
         {
             if (timeClient.forceUpdate())
             {
-                static uint16_t read_time_lock_count = 0;
-                static uint16_t read_time_unlock_count = 0;
-                if (read_time_lock_count < 100)
-                {
-                    if (read_time_lock_count > 0)
-                    {
-                        if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
-                            (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
-                        {
-                            read_time_lock_count = 0;
-                        }
-                    }
-                    ntp_time = timeClient.getRawEpochTime();
-                    time_in_sync_with_ntp = true;
-                    read_time_lock_count++;
-                    rtc_SecondsSinceUpdate = 0;
-                }
-                else
-                {
-                    if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
-                        (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
-                    {
-                        read_time_unlock_count++;
-                        if (read_time_unlock_count == 100)
-                        {
-                            read_time_lock_count = 0;
-                            read_time_unlock_count = 0;
-                        }
-                    }
-                    else
-                    {
+                // static uint16_t read_time_lock_count = 0;
+                // static uint16_t read_time_unlock_count = 0;
+                // if (read_time_lock_count < 100)
+                // {
+                //     if (read_time_lock_count > 0)
+                //     {
+                //         if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
+                //             (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
+                //         {
+                //             read_time_lock_count = 0;
+                //         }
+                //     }
+                //     ntp_time = timeClient.getRawEpochTime();
+                //     time_in_sync_with_ntp = true;
+                //     read_time_lock_count++;
+                //     rtc_SecondsSinceUpdate = 0;
+                // }
+                // else
+                // {
+                //     if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
+                //         (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
+                //     {
+                //         read_time_unlock_count++;
+                //         if (read_time_unlock_count == 100)
+                //         {
+                //             read_time_lock_count = 0;
+                //             read_time_unlock_count = 0;
+                //         }
+                //     }
+                //     else
+                //     {
+                //         ntp_time = timeClient.getRawEpochTime();
+                //         time_in_sync_with_ntp = true;
+                //         read_time_unlock_count = 0;
+                //         rtc_SecondsSinceUpdate = 0;
+                //     }
+                // }
+                
                         ntp_time = timeClient.getRawEpochTime();
                         time_in_sync_with_ntp = true;
-                        read_time_unlock_count = 0;
                         rtc_SecondsSinceUpdate = 0;
-                    }
-                }
+                        Log.printf("Time update from NTP server: %02d:%02d:%02d (%lu)... \n",
+                              (int)((ntp_time / (60 * 60)) % 24),
+                              (int)((ntp_time / 60) % 60),
+                              (int)(ntp_time % 60),
+                              ntp_time );
+
                 Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
                               (int)((ntp_time / (60 * 60)) % 24),
                               (int)((ntp_time / 60) % 60),
@@ -249,8 +262,12 @@ void loop()
         {
             uint32_t epoch_time = /*timeClient.getRawEpochTime()*/ ntp_time + rtc_SecondsSinceUpdate;
             // Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
-
             rtc_SetEpoch(epoch_time);
+            Log.printf("RTC module updated with time: %02d:%02d:%02d (%u)... \n",
+                              (int)((epoch_time / (60 * 60)) % 24),
+                              (int)((epoch_time / 60) % 60),
+                              (int)(epoch_time % 60),
+                              epoch_time );
             UpdatePressureCollectionTimer(epoch_time);
             // Serial.println("done");
         }
@@ -260,6 +277,11 @@ void loop()
         if (swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].IsTriggered(true))
         {
             rtc_GetDT(&rtc_dt);
+                        Log.printf("Time update from RTC module: %02d:%02d:%02d (%u)... \n",
+                              rtc_dt.hour(),
+                              rtc_dt.minute(),
+                              rtc_dt.second(),
+                              rtc_dt.unixtime() );
         }
     }
 
@@ -303,16 +325,24 @@ void loop()
         if (time_in_sync_with_ntp)
         {
             timeinsec = ntp_time + rtc_SecondsSinceUpdate;
-            Serial.printf("Time to collect pressure history from NTP %lu, pressure %3.1f... ", timeinsec, pressure);
+            Serial.printf("NTP time %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         else
         {
-            timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
-            Serial.printf("Time to collect pressure history from RTC module %lu, pressure %3.1f... ", timeinsec, pressure);
+            timeinsec = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
+            Serial.printf("RTC module time %lu, pressure %3.1f... ", timeinsec, pressure);
         }
+        Log.printf("Collecting pressure:\n           ");
+        Log.printf("Time=%02d:%02d:%02d (%lu), Pressure=%3.1fmmHg\n           ", 
+                            (int)((timeinsec / (60 * 60)) % 24),
+                            (int)((timeinsec / 60) % 60),
+                            (int)(timeinsec % 60),
+                            timeinsec, pressure);
         eeprom_add_history_item(timeinsec, pressure);
         Serial.println("OK");
         generate_pressure_history();
+        uint16_t time_until = swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].GetDowncounter();
+        Log.printf("Time until next collection: %02d:%02d (%d)\n", time_until/60, time_until%60, time_until);
     }
 
     switch (show_display)

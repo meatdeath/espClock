@@ -189,7 +189,7 @@ String rtc_GetTimeString() {
     if( time_sync_with_ntp_enabled ) {
         timeinsec = ntp_time + rtc_SecondsSinceUpdate;
     } else {
-        timeinsec = rtc_dt.secondstime() + RTC_SECONDS_2000_01_01 + rtc_SecondsSinceUpdate;
+        timeinsec = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
     }
     DateTimeClass dt;
     dt.setTime(timeinsec,true);

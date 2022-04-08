@@ -9,14 +9,13 @@
 #include "rtc.h"
 
 
-fLog::fLog() {
-    printTimestamp = true;
-    if( LittleFS.exists("/logfile.txt") ) {
+void fLog::Init() {
+    if( LittleFS.exists(filename) ) {
         Serial.println("Log file exist. Opening it for initial write");
     } else {
         Serial.println("Log file doesn't exist. Creating it...");
     }
-    filelog = LittleFS.open("/logfile.txt","a");
+    filelog = LittleFS.open(filename,"a");
     if(!filelog)
     {
         Serial.println("ERROR\r\nFailed to open file \"logfile.txt\".");
@@ -26,12 +25,17 @@ fLog::fLog() {
         Serial.printf("File opened. File position is %u", filelog.position() );
         printf("------------------------------------------------\r\n ");
         printf("Starting...\r\n");
-        filename = "/logfile.txt";
     }
     filelog.close();
 }
+fLog::fLog() {
+    readOffset = 0;
+    printTimestamp = true;
+    filename = "/logfile.txt";
+}
 
 fLog::fLog(const String log_file_name) {
+    readOffset = 0;
     printTimestamp = true;
     filename = log_file_name;
 }
@@ -56,3 +60,22 @@ size_t fLog::printf(const char *format, ...) {
 
     return len;
 }
+
+String fLog::readFirstString() {
+    readOffset = 0;
+    return readNextString();
+}
+String fLog::readNextString() {
+    String line = "";
+    filelog = LittleFS.open(filename,"r");
+    if(filelog) {
+        filelog.seek(readOffset);
+        line = filelog.readStringUntil('\n');
+        readOffset = filelog.position();
+        filelog.close();
+    }
+    return line;
+}
+
+
+fLog Log;

@@ -2,6 +2,7 @@
 #include "config.h"
 #include "rtc.h"
 #include "pressure_history.h"
+#include "filelog.h"
 
 //#define OTA
 
@@ -381,7 +382,11 @@ bool GetParamValue(AsyncWebServerRequest *request, const char *name, String& val
     Serial.println("Parameter not found");
     return false;
 }
-
+void AddServerGetLogString() {
+    server.on("/getLogString", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send_P(200, "text/plain", Log.readNextString().c_str() );
+    });
+}
 void AddServerFastTelemetry() {
     server.on("/getFastTelemetry", HTTP_GET, [](AsyncWebServerRequest *request){
         int8_t hours = 0;
