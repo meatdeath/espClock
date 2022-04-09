@@ -299,3 +299,16 @@ window.onload = function() {
     // }, 1000);
 }
 
+function getLog() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+            document.getElementById("logarea")=this.responseText;
+        }
+    };
+    param='?hour_offset=' + h + '&minute_offset=' + m;
+    xhttp.open('GET', '/set_time_offset'+param, true);
+    xhttp.send();
+}
+
