@@ -15,10 +15,10 @@ void fLog::Init() {
     } else {
         Serial.println("Log file doesn't exist. Creating it...");
     }
-    filelog = LittleFS.open(filename,"a");
+    filelog = LittleFS.open(filename,"a+");
     if(!filelog)
     {
-        Serial.println("ERROR\r\nFailed to open file \"logfile.txt\".");
+        Serial.println("ERROR! Failed to open file \"logfile.txt\".");
     }
     else
     {
