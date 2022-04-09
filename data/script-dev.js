@@ -307,8 +307,7 @@ function getLog() {
             document.getElementById("logarea")=this.responseText;
         }
     };
-    param='?hour_offset=' + h + '&minute_offset=' + m;
-    xhttp.open('GET', '/set_time_offset'+param, true);
+    xhttp.open('GET', '/getLogString', true);
     xhttp.send();
 }
 

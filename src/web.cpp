@@ -473,6 +473,7 @@ void createWebServer(int webtype)
 
         Serial.print(".");
         AddServerFastTelemetry();
+        AddServerGetLogString();
 
         server.on("/getPressureHistory", HTTP_GET, [](AsyncWebServerRequest *request){
             // if( !request->authenticate(http_username,http_password) )
@@ -606,6 +607,7 @@ void createWebServer(int webtype)
 
         Serial.print(".");
         AddServerFastTelemetry();
+        AddServerGetLogString();
        
         Serial.print(".");
         server.on("/getPressureHistory", HTTP_GET, [](AsyncWebServerRequest *request){
