@@ -44,17 +44,24 @@ size_t fLog::printf(const char *format, ...) {
     size_t len = 0;
     va_list arg;
     va_start(arg, format);
-
+Serial.print("file open... ");
     filelog = LittleFS.open(filename,"a");
     if(filelog) {
+Serial.println("ok");
         if( printTimestamp )
         {
-            len = filelog.printf( rtc_GetTimeString().c_str() );
+Serial.print("file printf time... ");
+            len = filelog.printf( "[%s] ", rtc_GetTimeString().c_str() );
+Serial.println("ok");
         }
+Serial.print("file printf... ");
         len = filelog.printf(format, arg);
+Serial.println("ok");
         filelog.close();
         if(format[strlen(format)-1] == '\n') printTimestamp = true;
         else printTimestamp = false;
+    } else {
+Serial.println("error");
     }
     va_end(arg);
 
@@ -67,12 +74,22 @@ String fLog::readFirstString() {
 }
 String fLog::readNextString() {
     String line = "";
+Serial.print("file open... ");
     filelog = LittleFS.open(filename,"r");
     if(filelog) {
+Serial.println("ok");
         filelog.seek(readOffset);
-        line = filelog.readStringUntil('\n');
-        readOffset = filelog.position();
+        if( filelog.available() ){
+Serial.print("file read... ");
+            line = filelog.readStringUntil('\n');
+Serial.printf("%s\r\n", line.c_str());
+            readOffset = filelog.position();
+        } else {
+            readOffset = 0;
+        }
         filelog.close();
+    } else {
+Serial.println("error");
     }
     return line;
 }

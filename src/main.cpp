@@ -56,6 +56,7 @@ void setup()
     //     digitalWrite(2, HIGH);
     // }
 
+    delay(100);
     pinMode(RTC_SQW_PIN, INPUT);
     delay(1000);
     ledInit();

@@ -8,7 +8,9 @@
 	"settings": {
 		"files.associations": {
 			"LG240644-S9.C": "cpp",
-			"LG240644-S8.C": "cpp"
+			"LG240644-S8.C": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp"
 		}
 	}
 }

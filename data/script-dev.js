@@ -304,7 +304,10 @@ function getLog() {
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) 
         {
-            document.getElementById("logarea")=this.responseText;
+            if(this.responseText != "") {
+                document.getElementById("logarea").value += this.responseText+"\n";
+                setTimeout(getLog, 10);
+            }
         }
     };
     xhttp.open('GET', '/getLogString', true);
