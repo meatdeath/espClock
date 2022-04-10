@@ -72,3 +72,10 @@ td>div {text-align: center;}
 .time-offset-radio-outer {
     margin-bottom:16px;
 }
+
+#logarea {
+    display: block;
+    min-width: 100%%;
+    max-width: 100%%;
+    min-height: 200px;
+}

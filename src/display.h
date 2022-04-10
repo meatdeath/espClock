@@ -38,7 +38,7 @@ typedef struct _digits_st {
 // };
 
 #define VERSION_MAJOR   1
-#define VERSION_MINOR   1
+#define VERSION_MINOR   3
 
 const digits_t digits [] PROGMEM = {
     { { 0b01111110, 0b10000001, 0b10000001, 0b10000001, 0b01111110 }, 5 },   //0

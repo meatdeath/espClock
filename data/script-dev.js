@@ -307,6 +307,8 @@ function getLog() {
             if(this.responseText != "") {
                 document.getElementById("logarea").value += this.responseText+"\n";
                 setTimeout(getLog, 10);
+            } else {
+                document.getElementById("logarea").value += "---------";
             }
         }
     };

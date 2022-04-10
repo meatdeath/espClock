@@ -187,12 +187,13 @@ extern unsigned long ntp_time;
 String rtc_GetTimeString() {
     unsigned long timeinsec;
     if( time_sync_with_ntp_enabled ) {
-        timeinsec = ntp_time + rtc_SecondsSinceUpdate;
+        timeinsec = /*ntp_time*/ 1649615216 + rtc_SecondsSinceUpdate;
     } else {
         timeinsec = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
     }
     DateTimeClass dt;
     dt.setTime(timeinsec,true);
+    
     DateTimeParts dtParts = dt.getParts();
     return dtParts.format("%Y-%m-%d %H:%M:%S");
 }

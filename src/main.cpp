@@ -56,15 +56,15 @@ void setup()
     //     digitalWrite(2, HIGH);
     // }
 
-    delay(100);
+    //delay(1000);
     pinMode(RTC_SQW_PIN, INPUT);
-    delay(1000);
+    //delay(1000);
     ledInit();
     ledOff();
     Serial.begin(115200);
-    delay(10);
-    Serial.println();
-    Serial.println();
+    delay(100);
+    //Serial.println();
+    //Serial.println();
     Serial.println("Startup");
     //delay(1000);
 
@@ -246,10 +246,13 @@ void loop()
                         ntp_time = timeClient.getRawEpochTime();
                         time_in_sync_with_ntp = true;
                         rtc_SecondsSinceUpdate = 0;
+                        int h = (int)((ntp_time / (60 * 60)) % 24);
+                        int m = (int)((ntp_time / 60) % 60);
+                        int s = (int)(ntp_time % 60);
                         Log.printf("Time update from NTP server: %02d:%02d:%02d (%lu)... \n",
-                              (int)((ntp_time / (60 * 60)) % 24),
-                              (int)((ntp_time / 60) % 60),
-                              (int)(ntp_time % 60),
+                              h,
+                              m,
+                              s,
                               ntp_time );
 
                 Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
