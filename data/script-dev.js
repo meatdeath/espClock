@@ -304,15 +304,22 @@ function getLog() {
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) 
         {
+            var logarea = document.getElementById("logarea");
             if(this.responseText != "") {
-                document.getElementById("logarea").value += this.responseText+"\n";
+                logarea.value += this.responseText+"\n";
                 setTimeout(getLog, 10);
             } else {
-                document.getElementById("logarea").value += "---------";
+                logarea.value += "---------";
             }
+            logarea.scrollTop = logarea.scrollHeight;
         }
     };
     xhttp.open('GET', '/getLogString', true);
     xhttp.send();
+}
+
+function onGetLogClick() {
+    document.getElementById("logarea").value = "";
+    getLog();
 }
 

@@ -11,23 +11,21 @@
 
 void fLog::Init() {
     if( LittleFS.exists(filename) ) {
-        Serial.println("Log file exist. Opening it for initial write");
+        Serial.println("Log file exist. Use it to initial write");
     } else {
         Serial.println("Log file doesn't exist. Creating it...");
+        filelog = LittleFS.open(filename,"w");
+        if(!filelog) {
+            Serial.printf("ERROR creating file \"%s\".\r\n", filename.c_str());
+        } else {
+            filelog.close();
+            Serial.println("File \"logfile.txt\" created.");
+        }
     }
-    filelog = LittleFS.open(filename,"a+");
-    if(!filelog)
-    {
-        Serial.println("ERROR! Failed to open file \"logfile.txt\".");
-    }
-    else
-    {
-        Serial.printf("File opened. File position is %u", filelog.position() );
-        printf("------------------------------------------------\r\n ");
-        printf("Starting...\r\n");
-    }
-    filelog.close();
+    printf("------------------------------------------------\r\n ");
+    printf("Starting...\r\n");
 }
+
 fLog::fLog() {
     readOffset = 0;
     printTimestamp = true;
@@ -74,22 +72,17 @@ String fLog::readFirstString() {
 }
 String fLog::readNextString() {
     String line = "";
-Serial.print("file open... ");
     filelog = LittleFS.open(filename,"r");
     if(filelog) {
-Serial.println("ok");
         filelog.seek(readOffset);
-        if( filelog.available() ){
-Serial.print("file read... ");
+        if( filelog.available() ) {
             line = filelog.readStringUntil('\n');
-Serial.printf("%s\r\n", line.c_str());
             readOffset = filelog.position();
         } else {
             readOffset = 0;
         }
         filelog.close();
     } else {
-Serial.println("error");
     }
     return line;
 }
