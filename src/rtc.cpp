@@ -21,10 +21,9 @@ DateTime rtc_dt;
 void rtc_InitSoftTimers() {
     swTimer[SW_TIMER_SENSOR_UPDATE].Init(true,sensor_update_time,sensor_update_time,false,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_RTC_MODULE_UPDATE].Init(true,60,60,false,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].Init(true,60,10,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].Init(true,60,20,true,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_NTP_TIME_UPDATE].Init(true,67,30,true,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,2,2,false,true,SW_TIMER_PRECISION_S);
-    //swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,CLOCK_SHOW_TIME,CLOCK_SHOW_TIME,false,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init(true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_GET_AMBIANCE].Init(true,1,1,true,true,SW_TIMER_PRECISION_MS);
     swTimer[SW_TIMER_BUTTON].Init(false,0,0,false,false,SW_TIMER_PRECISION_S);
@@ -184,18 +183,38 @@ void rtc_SetEpoch(uint32_t epoch_time) {
 extern bool time_sync_with_ntp_enabled;
 extern unsigned long ntp_time;
 
+#include "TimeLib.h"
+
 String rtc_GetTimeString() {
     unsigned long timeinsec;
     if( time_sync_with_ntp_enabled ) {
-        timeinsec = /*ntp_time*/ 1649615216 + rtc_SecondsSinceUpdate;
+        timeinsec = ntp_time + rtc_SecondsSinceUpdate;
     } else {
         timeinsec = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
     }
-    DateTimeClass dt;
-    dt.setTime(timeinsec,true);
-    
-    DateTimeParts dtParts = dt.getParts();
-    return dtParts.format("%Y-%m-%d %H:%M:%S");
+
+Serial.print("[rtc_GetTimeString] convert epoch seconds... ");
+    int iyear  = year(timeinsec);
+    int imonth = month(timeinsec);
+    int iday   = day(timeinsec);
+    int ihour  = hour(timeinsec);
+    int iminute = minute(timeinsec);
+    int isecond = second(timeinsec);
+Serial.println("done");
+
+    String timestr = 
+                    String( iyear )+'/'+
+                    String((imonth<10)?"0":"")+
+                    String( imonth )+'/'+
+                    String((iday<10)?"0":"")+
+                    String( iday )+' '+
+                    String((ihour<10)?"0":"")+
+                    String( ihour )+':'+
+                    String((iminute<10)?"0":"")+
+                    String( iminute )+':'+
+                    String((isecond<10)?"0":"")+
+                    String( isecond );
+    return timestr;
 }
 
 //-----------------------------------------------------------------------------

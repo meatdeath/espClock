@@ -42,6 +42,12 @@ size_t fLog::printf(const char *format, ...) {
     size_t len = 0;
     va_list arg;
     va_start(arg, format);
+
+    char tmp[64];
+    vsnprintf(tmp, 64, format, arg);
+    Serial.print("logfile: ");
+    Serial.println(tmp);
+            
 Serial.print("file open... ");
     filelog = LittleFS.open(filename,"a");
     if(filelog) {
@@ -53,7 +59,8 @@ Serial.print("file printf time... ");
 Serial.println("ok");
         }
 Serial.print("file printf... ");
-        len = filelog.printf(format, arg);
+        // len = filelog.printf(format, arg);
+        len = filelog.printf(tmp);
 Serial.println("ok");
         filelog.close();
         if(format[strlen(format)-1] == '\n') printTimestamp = true;
