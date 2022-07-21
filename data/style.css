@@ -74,6 +74,7 @@ td>div {text-align: center;}
 }
 
 #logarea {
+    margin: 20px 0px;
     display: block;
     min-width: 100%%;
     max-width: 100%%;

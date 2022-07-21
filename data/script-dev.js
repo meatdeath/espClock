@@ -283,22 +283,6 @@ window.onload = function() {
     getFastTelemetry();
     setInterval( getPressureHistory, 5000 );
     updateTabs();
-
-    
-    // setInterval(() => {
-    //     d = new Date(); //object of date()
-    //     hr = d.getHours();
-    //     min = d.getMinutes();
-    //     sec = d.getSeconds();
-    //     hr_rotation = 30 * hr + min / 2; //converting current time
-    //     min_rotation = 6 * min;
-    //     sec_rotation = 6 * sec;
-    //     if(sec_rotation==0) sec_rotation+=0.01;
-    
-    //     analogClockUTCHour.style.transform = `rotate(${hr_rotation}deg)`;
-    //     analogClockUTCMinute.style.transform = `rotate(${min_rotation}deg)`;
-    //     analogClockUTCSecond.style.transform = `rotate(${sec_rotation}deg)`;
-    // }, 1000);
 }
 
 function getLog() {

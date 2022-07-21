@@ -56,17 +56,23 @@ void setup()
     //     digitalWrite(2, HIGH);
     // }
 
-    //delay(1000);
-    pinMode(RTC_SQW_PIN, INPUT);
-    //delay(1000);
     ledInit();
+<<<<<<< HEAD
     ledOff();
     Serial.begin(76800);
+=======
+    ledOn();
+    delay(1000);
+    pinMode(RTC_SQW_PIN, INPUT);
+    delay(1000);
+    //ledOff();
+    Serial.begin(115200);
+>>>>>>> 74931a9f6c116e3213772e6ce52c88e331e7ef9b
     delay(100);
     //Serial.println();
     //Serial.println();
     Serial.println("Startup");
-    //delay(1000);
+    delay(1000);
 
     uint8_t eepStatus;
     Serial.print("Init EEPROM... ");
@@ -282,11 +288,12 @@ void loop()
         if (swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].IsTriggered(true))
         {
             rtc_GetDT(&rtc_dt);
-                        Log.printf("Time update from RTC module: %02d:%02d:%02d (%u)... \n",
-                              rtc_dt.hour(),
-                              rtc_dt.minute(),
-                              rtc_dt.second(),
-                              rtc_dt.unixtime() );
+      
+            Log.printf("Time update from RTC module: %02d:%02d:%02d (%u)... \n",
+                    rtc_dt.hour(),
+                    rtc_dt.minute(),
+                    rtc_dt.second(),
+                    rtc_dt.unixtime() );
         }
     }
 
