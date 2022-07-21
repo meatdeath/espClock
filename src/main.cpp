@@ -61,7 +61,7 @@ void setup()
     //delay(1000);
     ledInit();
     ledOff();
-    Serial.begin(115200);
+    Serial.begin(76800);
     delay(100);
     //Serial.println();
     //Serial.println();
@@ -186,6 +186,7 @@ void loop()
     int ambianceValue = 0; // value abiance read from the port
     wifi_processing();
     button_Process();
+        
     if (softreset == true)
     {
         Serial.printf("The board will reset in %ds... \r", 10);
@@ -255,11 +256,11 @@ void loop()
                               s,
                               ntp_time );
 
-                Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
-                              (int)((ntp_time / (60 * 60)) % 24),
-                              (int)((ntp_time / 60) % 60),
-                              (int)(ntp_time % 60),
-                              ntp_time );
+                // Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
+                //               (int)((ntp_time / (60 * 60)) % 24),
+                //               (int)((ntp_time / 60) % 60),
+                //               (int)(ntp_time % 60),
+                //               ntp_time );
             }
         }
         if (swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true))
@@ -289,6 +290,7 @@ void loop()
         }
     }
 
+    swTimer[SW_TIMER_GET_AMBIANCE].HandleTickMs();
     if (swTimer[SW_TIMER_GET_AMBIANCE].IsTriggered(true) && pressure != 0)
     {
         ambianceValue = analogRead(analogInPin);
@@ -308,33 +310,34 @@ void loop()
         }
         // Serial.printf("ambiance : %d\r\n", ambianceValue);
         // Serial.printf("lightness : %d\r\n", 16-measured_intensity);
-    }
-    if (intensity != measured_intensity)
-    {
-        if (intensity > measured_intensity)
+        if (intensity != measured_intensity)
         {
-            intensity--;
+            if (intensity > measured_intensity)
+            {
+                intensity--;
+            }
+            else if (intensity < measured_intensity)
+            {
+                intensity++;
+            }
+            display_SetIntensity(16 - intensity);
+            //Serial.printf("brightness : %d\r\n", intensity);
         }
-        else if (intensity < measured_intensity)
-        {
-            intensity++;
-        }
-        display_SetIntensity(16 - intensity);
     }
 
     if (swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].IsTriggered(true) && pressure != 0)
     {
         unsigned long timeinsec;
-        Serial.print("Time to collect pressure history: ");
+        //Serial.print("Time to collect pressure history: ");
         if (time_in_sync_with_ntp)
         {
             timeinsec = ntp_time + rtc_SecondsSinceUpdate;
-            Serial.printf("NTP time %lu, pressure %3.1f... ", timeinsec, pressure);
+            //Serial.printf("NTP time %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         else
         {
             timeinsec = rtc_dt.unixtime() + rtc_SecondsSinceUpdate;
-            Serial.printf("RTC module time %lu, pressure %3.1f... ", timeinsec, pressure);
+            //Serial.printf("RTC module time %lu, pressure %3.1f... ", timeinsec, pressure);
         }
         Log.printf("Collecting pressure:\n           ");
         Log.printf("Time=%02d:%02d:%02d (%lu), Pressure=%3.1fmmHg\n           ", 
@@ -481,7 +484,7 @@ void loop()
 //----------------------------------------------------------
 
 // NTPClient.h
-//  unsigned long NTPClient::getRawEpochTime() {
+//  unsigned long getRawEpochTime();
 
 // NTPClient.cpp
 //  unsigned long NTPClient::getRawEpochTime() {

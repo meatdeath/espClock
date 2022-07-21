@@ -171,7 +171,14 @@ void eeprom_restore_pressure_history(unsigned long time) {
                 //     pressure_history_item[i].pressure, 
                 //     pressure_history_item[i].time);
             // clear item
-            memset((uint8_t*)&(pressure_history_item[i]), 0xFF, sizeof(pressure_history_t) );
+            //pressure_history_item[i].time = 0xffffffff;
+            memset((uint8_t*)&(pressure_history_item[i].time), 0xff, sizeof(pressure_history_t));
+            //memset((uint8_t*)&(pressure_history_item[i]), 0xFF, sizeof(pressure_history_t) ); // not working
+            Serial.printf("\n[%02d]: ", i);
+            for( uint16_t ii = 0; ii < sizeof(pressure_history_t); ii++) {
+                Serial.printf("%02x ", ((uint8_t*)&(pressure_history_item[i]))[ii] );
+            }
+            Serial.println();
         } 
         else 
         {
@@ -215,9 +222,14 @@ void eeprom_restore_pressure_history(unsigned long time) {
     }
 //    Serial.printf("History: start=%d, end=%d, size=%d\r\n", pressure_history_start, pressure_history_end, pressure_history_size);
 
+
     // Update pressure history in eeprom
     for( uint16_t i = 0; i < (PRESSURE_HISTORY_SIZE*EEPROM_HISTORY_ITEM_SIZE); i++) {
         eepStatus = eeprom.write( EEPROM_HISTORY_ADDR+i, ((uint8_t*)pressure_history_item)[i] );
+        if( (i%EEPROM_HISTORY_ITEM_SIZE) == 0 ) {
+            Serial.printf("\n%08x: ", i);
+        }
+        Serial.printf("%02x ", ((uint8_t*)pressure_history_item)[i]);
     }
 
     // Add holes

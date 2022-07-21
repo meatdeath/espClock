@@ -48,6 +48,8 @@ function getFastTelemetry() {
             var corr_hour = telemetry.Hours*1 + telemetry.HourOffset*1;
             var corr_minute = telemetry.Minutes*1 + telemetry.MinuteOffset*1;
             var corr_second = telemetry.Seconds;
+            if(corr_hour < 0)   corr_hour += 24;
+            if(corr_minute < 0) corr_minute += 60;
             if( corr_minute >= 60 ) {
                 corr_minute -= 60;
                 corr_hour += 1;

@@ -14,6 +14,7 @@ volatile bool local_time_updated = false;
 SoftTimer swTimer[SW_TIMER_MAX];
 RTC_DS3231 rtc;
 DateTime rtc_dt;
+static unsigned long last_time_ms;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -26,8 +27,9 @@ void rtc_InitSoftTimers() {
     swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,2,2,false,true,SW_TIMER_PRECISION_S);
     //swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,CLOCK_SHOW_TIME,CLOCK_SHOW_TIME,false,true,SW_TIMER_PRECISION_S);
     swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init(true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_GET_AMBIANCE].Init(true,1,1,true,true,SW_TIMER_PRECISION_MS);
+    swTimer[SW_TIMER_GET_AMBIANCE].Init(true,50,50,true,true,SW_TIMER_PRECISION_MS);
     swTimer[SW_TIMER_BUTTON].Init(false,0,0,false,false,SW_TIMER_PRECISION_S);
+    last_time_ms = millis();
 }
 
 SoftTimer::SoftTimer() {
@@ -99,8 +101,8 @@ uint16_t SoftTimer::GetUpdateTime() {
     return updatetime;
 }
 
-void SoftTimer::_Tick() {
-    if( this->active && this->downcounter ) {
+void SoftTimer::_TickS() {
+    if( this->active && this->precision == SW_TIMER_PRECISION_S && this->downcounter ) {
         this->downcounter--;
         if( this->downcounter == 0 ) {
             this->triggered = true;
@@ -109,6 +111,23 @@ void SoftTimer::_Tick() {
             }
         }
     } 
+}
+
+void SoftTimer::HandleTickMs() {
+    unsigned long time_ms = millis()-last_time_ms;
+    if( this->active && this->precision == SW_TIMER_PRECISION_MS && this->downcounter ) {
+        if( this->downcounter > time_ms)
+            this->downcounter -= time_ms;
+        else
+            this->downcounter = 0;
+        if( this->downcounter == 0 ) {
+            this->triggered = true;
+            if(this->autoupdate) {
+                this->downcounter = this->updatetime;
+            }
+        }
+    } 
+    last_time_ms += time_ms;
 }
 
 bool SoftTimer::isActive() {
@@ -120,7 +139,7 @@ IRAM_ATTR void time_tick500ms() {
     if( digitalRead(RTC_SQW_PIN) ) {
         rtc_SecondsSinceUpdate++;
         for( int i = 0; i < SW_TIMER_MAX; i++ ) {
-            swTimer[i]._Tick();
+            swTimer[i]._TickS();
         }
     }
     //Serial.printf("Seconds since last sync: %ld\r\n", rtc_SecondsSinceUpdate);
@@ -163,19 +182,19 @@ void rtc_Init(void) {
 }
 
 void rtc_GetDT(DateTime *dst_dt) {
-    Serial.println("Get time from RTC module");
+    //Serial.println("Get time from RTC module");
     *dst_dt = rtc.now();
     rtc_SecondsSinceUpdate = 0;
 }
 
 void rtc_SetDT(DateTime dt) {
-    Serial.println("Adjust RTC module with datetime");
+    //Serial.println("Adjust RTC module with datetime");
     rtc.adjust(dt);
     rtc_SecondsSinceUpdate = 0;
 }
 
 void rtc_SetEpoch(uint32_t epoch_time) {
-    Serial.println("Adjust RTC module with epoch time");
+    //Serial.println("Adjust RTC module with epoch time");
     rtc.adjust( DateTime(epoch_time) );
 }
 

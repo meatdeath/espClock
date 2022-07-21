@@ -4,13 +4,15 @@
 #include "pressure_history.h"
 #include "filelog.h"
 
-//#define OTA
+#define OTA
 
 #ifdef OTA
 #include <AsyncElegantOTA.h>
 #endif
 #include <NTPClient.h>
 #include <LittleFS.h>
+
+#include <WiFiUdp.h>
 
 extern volatile bool softreset;
 extern unsigned long ntp_time;
@@ -54,6 +56,39 @@ typedef struct ap_list_st {
 
 ap_list_t ap_list[AP_LIST_MAX];
 
+
+// void ota_Init() {
+//     ArduinoOTA.setHostname("esp8266");
+//     ArduinoOTA.setPassword("esp8266");
+    
+//     ArduinoOTA.onStart([]() {
+//       String type;
+//       if (ArduinoOTA.getCommand() == U_FLASH)
+//         type = "sketch";
+//       else // U_SPIFFS
+//         type = "filesystem";
+
+//       // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+//       Serial.println("Start updating " + type);
+//     });
+//     ArduinoOTA.onEnd([]() {
+//       Serial.println("\nEnd");
+//     });
+//     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+//       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+//     });
+//     ArduinoOTA.onError([](ota_error_t error) {
+//       Serial.printf("Error[%u]: ", error);
+//       if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+//       else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+//       else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+//       else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+//       else if (error == OTA_END_ERROR) Serial.println("End Failed");
+//     });
+
+//     ArduinoOTA.begin();
+// }
+
 void web_init(void) {
     Serial.print("Check filesystem... ");
     if(!LittleFS.begin()){
@@ -94,6 +129,7 @@ void wifi_processing(void) {
             time_sync_with_ntp_enabled = false;
             time_in_sync_with_ntp = false;
             setupAP();
+            //ota_Init();
             WifiState = STATE_WIFI_AP;
         }
         break;
@@ -102,6 +138,7 @@ void wifi_processing(void) {
             Serial.println("WiFi connected");
             WifiState = STATE_WIFI_CONNECTED;
             launchWeb(WEB_PAGES_NORMAL);
+            //ota_Init();
             timeClient.begin();
             time_sync_with_ntp_enabled = true; 
             ledOn();
@@ -608,6 +645,32 @@ void createWebServer(int webtype)
         Serial.print(".");
         AddServerFastTelemetry();
         AddServerGetLogString();
+
+        // server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request {
+        //     request->se
+        //         request->sendHeader("Connection", "close");
+        //         request->send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+        //         ESP.restart();
+        //     }, [](AsyncWebServerRequest *request {
+        //         HTTPUpload& upload = request->upload();
+        //         if (upload.status == UPLOAD_FILE_START) {
+        //         Serial.printf("Update: %s\n", upload.filename.c_str());
+        //         if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
+        //             Update.printError(Serial);
+        //         }
+        //         } else if (upload.status == UPLOAD_FILE_WRITE) {
+        //         /* flashing firmware to ESP*/
+        //         if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        //             Update.printError(Serial);
+        //         }
+        //         } else if (upload.status == UPLOAD_FILE_END) {
+        //         if (Update.end(true)) { //true to set the size to the current progress
+        //             Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+        //         } else {
+        //             Update.printError(Serial);
+        //         }
+        //         }
+        //     });
        
         Serial.print(".");
         server.on("/getPressureHistory", HTTP_GET, [](AsyncWebServerRequest *request){

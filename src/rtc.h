@@ -6,7 +6,7 @@
 #include "RTClib.h"
 #include "pressure_history.h"
 
-#define RTC_SQW_PIN 0
+#define RTC_SQW_PIN 12
 
 void rtc_Init(void);
 void rtc_GetDT(DateTime *dst_dt);
@@ -49,7 +49,8 @@ class SoftTimer {
         uint16_t GetDowncounter();
         void SetUpdateTime( uint16_t update_time);
         uint16_t GetUpdateTime();
-        void _Tick();
+        void _TickS();
+        void HandleTickMs();
         bool isActive();
     private:
         bool active;

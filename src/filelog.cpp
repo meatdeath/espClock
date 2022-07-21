@@ -8,8 +8,11 @@
 #include "filelog.h"
 #include "rtc.h"
 
+#define DISABLE_FILE_LOG
+
 
 void fLog::Init() {
+#ifndef DISABLE_FILE_LOG
     if( LittleFS.exists(filename) ) {
         Serial.println("Log file exist. Use it to initial write");
     } else {
@@ -24,6 +27,7 @@ void fLog::Init() {
     }
     printf("------------------------------------------------\r\n ");
     printf("Starting...\r\n");
+#endif
 }
 
 fLog::fLog() {
@@ -40,6 +44,7 @@ fLog::fLog(const String log_file_name) {
 
 size_t fLog::printf(const char *format, ...) {
     size_t len = 0;
+#ifndef DISABLE_FILE_LOG
     va_list arg;
     va_start(arg, format);
 Serial.print("file open... ");
@@ -62,16 +67,21 @@ Serial.println("ok");
 Serial.println("error");
     }
     va_end(arg);
-
+#endif
     return len;
 }
 
 String fLog::readFirstString() {
+#ifndef DISABLE_FILE_LOG
     readOffset = 0;
     return readNextString();
+#else   
+    return "";
+#endif
 }
 String fLog::readNextString() {
     String line = "";
+#ifndef DISABLE_FILE_LOG
     filelog = LittleFS.open(filename,"r");
     if(filelog) {
         filelog.seek(readOffset);
@@ -84,6 +94,7 @@ String fLog::readNextString() {
         filelog.close();
     } else {
     }
+#endif
     return line;
 }
 
