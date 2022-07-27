@@ -57,17 +57,8 @@ void setup()
     // }
 
     ledInit();
-<<<<<<< HEAD
     ledOff();
     Serial.begin(76800);
-=======
-    ledOn();
-    delay(1000);
-    pinMode(RTC_SQW_PIN, INPUT);
-    delay(1000);
-    //ledOff();
-    Serial.begin(115200);
->>>>>>> 74931a9f6c116e3213772e6ce52c88e331e7ef9b
     delay(100);
     //Serial.println();
     //Serial.println();
