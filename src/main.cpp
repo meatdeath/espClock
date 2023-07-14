@@ -1,7 +1,5 @@
 #include <Arduino.h>
 
-// #include <ESP8266WiFi.h>
-// #include <ESP8266WebServer.h>
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
 
@@ -20,6 +18,7 @@ extEEPROM eeprom(kbits_32, 1, 64, 0x57); // device size, number of devices, page
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP,"time.google.com");
+//NTPClient timeClient(ntpUDP,"pool.ntp.org");
 
 volatile bool softreset = false;
 bool time_sync_with_ntp_enabled = false;
@@ -175,6 +174,7 @@ uint8_t last_shown_display = DISPLAY_CLOCK;
 uint8_t intensity = 15;
 uint8_t measured_intensity = 1;
 unsigned long ntp_time = 0;
+bool ntp_time_valid = false;
 
 //-----------------------------------------------------------------------------------------------------------
 
@@ -201,77 +201,38 @@ void loop()
     {
         if (swTimer[SW_TIMER_NTP_TIME_UPDATE].IsTriggered(true)) // It's time to update from time server
         {
+            Serial.println("SW_TIMER_NTP_TIME_UPDATE triggered");
+            //if (false)
             if (timeClient.forceUpdate())
             {
-                // static uint16_t read_time_lock_count = 0;
-                // static uint16_t read_time_unlock_count = 0;
-                // if (read_time_lock_count < 100)
-                // {
-                //     if (read_time_lock_count > 0)
-                //     {
-                //         if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
-                //             (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
-                //         {
-                //             read_time_lock_count = 0;
-                //         }
-                //     }
-                //     ntp_time = timeClient.getRawEpochTime();
-                //     time_in_sync_with_ntp = true;
-                //     read_time_lock_count++;
-                //     rtc_SecondsSinceUpdate = 0;
-                // }
-                // else
-                // {
-                //     if ((ntp_time + rtc_SecondsSinceUpdate + 30) < timeClient.getRawEpochTime() ||
-                //         (ntp_time + rtc_SecondsSinceUpdate - 30) > timeClient.getRawEpochTime())
-                //     {
-                //         read_time_unlock_count++;
-                //         if (read_time_unlock_count == 100)
-                //         {
-                //             read_time_lock_count = 0;
-                //             read_time_unlock_count = 0;
-                //         }
-                //     }
-                //     else
-                //     {
-                //         ntp_time = timeClient.getRawEpochTime();
-                //         time_in_sync_with_ntp = true;
-                //         read_time_unlock_count = 0;
-                //         rtc_SecondsSinceUpdate = 0;
-                //     }
-                // }
-                
-                        ntp_time = timeClient.getRawEpochTime();
-                        time_in_sync_with_ntp = true;
-                        rtc_SecondsSinceUpdate = 0;
-                        int h = (int)((ntp_time / (60 * 60)) % 24);
-                        int m = (int)((ntp_time / 60) % 60);
-                        int s = (int)(ntp_time % 60);
-                        Log.printf("Time update from NTP server: %02d:%02d:%02d (%lu)... \n",
-                              h,
-                              m,
-                              s,
-                              ntp_time );
-
-                // Serial.printf("Time after update from NTP server %02d:%02d:%02d (%lu)... \r\n",
-                //               (int)((ntp_time / (60 * 60)) % 24),
-                //               (int)((ntp_time / 60) % 60),
-                //               (int)(ntp_time % 60),
-                //               ntp_time );
+                ntp_time = timeClient.getRawEpochTime();
+                time_in_sync_with_ntp = true;
+                rtc_SecondsSinceUpdate = 0;
+                int h = (int)((ntp_time / (60 * 60)) % 24);
+                int m = (int)((ntp_time / 60) % 60);
+                int s = (int)(ntp_time % 60);
+                Log.printf("Time update from NTP server: %02d:%02d:%02d (%lu)... \n",
+                        h,
+                        m,
+                        s,
+                        ntp_time );
+                ntp_time_valid = true;
+            }
+            else
+            {
+                ntp_time_valid = false;
             }
         }
-        if (swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true))
+        if (swTimer[SW_TIMER_RTC_MODULE_UPDATE].IsTriggered(true) && ntp_time_valid)
         {
-            uint32_t epoch_time = /*timeClient.getRawEpochTime()*/ ntp_time + rtc_SecondsSinceUpdate;
-            // Serial.printf("Updating RTC module with epoch time %u... ", epoch_time);
+            uint32_t epoch_time = ntp_time + rtc_SecondsSinceUpdate;
             rtc_SetEpoch(epoch_time);
-            Log.printf("RTC module updated with time: %02d:%02d:%02d (%u)... \n",
+            Serial.printf("RTC module updated with time: %02d:%02d:%02d (%u)\n",
                               (int)((epoch_time / (60 * 60)) % 24),
                               (int)((epoch_time / 60) % 60),
                               (int)(epoch_time % 60),
                               epoch_time );
             UpdatePressureCollectionTimer(epoch_time);
-            // Serial.println("done");
         }
     }
     else
@@ -280,7 +241,7 @@ void loop()
         {
             rtc_GetDT(&rtc_dt);
       
-            Log.printf("Time update from RTC module: %02d:%02d:%02d (%u)... \n",
+            Serial.printf("Time update from RTC module: %02d:%02d:%02d (%u)... \n",
                     rtc_dt.hour(),
                     rtc_dt.minute(),
                     rtc_dt.second(),

@@ -20,6 +20,12 @@ void button_Init()
 {
     pinMode( BUTTON_PIN, INPUT_PULLDOWN_16 );
 }
+
+void button_InitTimer(uin16_t timeout)
+{
+    swTimer[SW_TIMER_BUTTON].Init("Button",true,timeout,timeout);
+}
+
 void button_Process() 
 {
     int button_event = 0;
@@ -28,7 +34,7 @@ void button_Process()
     if( digitalRead(BUTTON_PIN) == HIGH ) {
         if( !swTimer[SW_TIMER_BUTTON].isActive() ) {
             Serial.print("press");
-            swTimer[SW_TIMER_BUTTON].Init(true,3,3);
+            button_InitTimer(3);
             btn_evt = BUTTON_EVENT_SHORT_PRESS;
             Serial.print(btn_evt);
         } else if( swTimer[SW_TIMER_BUTTON].IsTriggered(true) ) {
@@ -36,24 +42,24 @@ void button_Process()
             switch(btn_evt) {
                 case BUTTON_EVENT_SHORT_PRESS: 
                     btn_evt = BUTTON_EVENT_MIDDLE_PRESS;
-                    swTimer[SW_TIMER_BUTTON].Init(true,7,7);
+                    button_InitTimer(7);
                     Serial.print(btn_evt);
                     break;
                 case BUTTON_EVENT_MIDDLE_PRESS: 
                     btn_evt = BUTTON_EVENT_LONG_PRESS;
-                    swTimer[SW_TIMER_BUTTON].Init(true,10,10);
+                    button_InitTimer(10);
                     Serial.print(btn_evt);
                     break;
                 case BUTTON_EVENT_LONG_PRESS: 
                     btn_evt = BUTTON_EVENT_LONG_LONG_PRESS;
-                    swTimer[SW_TIMER_BUTTON].Init(true,10,10);
+                    button_InitTimer(10);
                     Serial.print(btn_evt);
                     break;
             }
         }
     } else {
         if( swTimer[SW_TIMER_BUTTON].isActive() ) {
-            swTimer[SW_TIMER_BUTTON].Init(false,0,0);
+            swTimer[SW_TIMER_BUTTON].Init("Button",false,0,0);
             button_event = btn_evt;
             btn_evt = 0;
         }

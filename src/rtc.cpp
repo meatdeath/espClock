@@ -20,14 +20,14 @@ static unsigned long last_time_ms;
 //-----------------------------------------------------------------------------
 
 void rtc_InitSoftTimers() {
-    swTimer[SW_TIMER_SENSOR_UPDATE].Init(true,sensor_update_time,sensor_update_time,false,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_RTC_MODULE_UPDATE].Init(true,60,60,false,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].Init(true,60,20,true,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_NTP_TIME_UPDATE].Init(true,67,30,true,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_SWITCH_DISPLAY].Init(true,2,2,false,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init(true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
-    swTimer[SW_TIMER_GET_AMBIANCE].Init(true,50,50,true,true,SW_TIMER_PRECISION_MS);
-    swTimer[SW_TIMER_BUTTON].Init(false,0,0,false,false,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_SENSOR_UPDATE           ].Init("Sens_upd",true,sensor_update_time,sensor_update_time,false,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_RTC_MODULE_UPDATE       ].Init("RTC_modul_upd",true,60,60,false,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_GET_TIME_FROM_RTC_MODULE].Init("Get_RTC_time",true,60,20,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_NTP_TIME_UPDATE         ].Init("Get_NTP_time",true,67,30,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_SWITCH_DISPLAY          ].Init("Switch_disp",true,2,2,false,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_COLLECT_PRESSURE_HISTORY].Init("Collect_P_history",true,COLLECT_PRESSURE_HISTORY_PERIOD,COLLECT_PRESSURE_HISTORY_PERIOD,true,true,SW_TIMER_PRECISION_S);
+    swTimer[SW_TIMER_GET_AMBIANCE            ].Init("Get_ambiance",true,50,50,true,true,SW_TIMER_PRECISION_MS);
+    swTimer[SW_TIMER_BUTTON                  ].Init("Button",false,0,0,false,false,SW_TIMER_PRECISION_S);
     last_time_ms = millis();
 }
 
@@ -40,12 +40,14 @@ SoftTimer::SoftTimer() {
     this->precision = SW_TIMER_PRECISION_S;
 }
 
-void SoftTimer::Init(   bool active,
+void SoftTimer::Init(   const char *name,
+                        bool active,
                         uint16_t updatetime, 
                         uint16_t downcounter, 
                         bool triggered,
                         bool autoupdate,
                         sw_timer_precision_t precision) {
+    strncpy(this->name, name, TIMER_NAME_SIZE);
     this->active = active;
     this->triggered = triggered;
     this->autoupdate = autoupdate;
@@ -104,6 +106,7 @@ void SoftTimer::_TickS() {
     if( this->active && this->precision == SW_TIMER_PRECISION_S && this->downcounter ) {
         this->downcounter--;
         if( this->downcounter == 0 ) {
+        // Serial.printf("#%s#\n",this->name);
             this->triggered = true;
             if(this->autoupdate) {
                 this->downcounter = this->updatetime;

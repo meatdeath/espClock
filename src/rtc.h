@@ -6,7 +6,9 @@
 #include "RTClib.h"
 #include "pressure_history.h"
 
-#define RTC_SQW_PIN 12
+#define RTC_SQW_PIN     12
+
+#define TIMER_NAME_SIZE 20
 
 void rtc_Init(void);
 void rtc_GetDT(DateTime *dst_dt);
@@ -37,7 +39,8 @@ typedef enum sw_timer_precision_en {
 class SoftTimer {
     public:
         SoftTimer();
-        void Init(  bool active = false,
+        void Init(  const char *name,
+                    bool active = false,
                     uint16_t updatetime = 0, 
                     uint16_t downcounter = 0, 
                     bool triggered = false,
@@ -53,6 +56,7 @@ class SoftTimer {
         void HandleTickMs();
         bool isActive();
     private:
+        char name[TIMER_NAME_SIZE];
         bool active;
         bool triggered;
         bool autoupdate;
